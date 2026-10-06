@@ -26,7 +26,7 @@ All operating system interactions in `PROJECT_NOTCH` are managed through isolate
 | **Power & Battery** | Win32 `GetSystemPowerStatus` | Battery percentage, AC/DC status, charging indicator | Typed placeholder model in `integrations/power.rs` |
 | **Clipboard** | Win32 `AddClipboardFormatListener` & `WM_CLIPBOARDUPDATE` | Event-driven text clipboard change notifications | Typed placeholder model in `integrations/clipboard.rs` |
 | **Downloads Watcher** | Filesystem change events on configured watch directories | Watched folder change awareness | Typed placeholder model in `integrations/downloads.rs` |
-| **App Launcher** | `std::process::Command` with explicit executable and argument split | Safe application launching without raw shell evaluation | Typed placeholder model in `integrations/launcher.rs` |
+| **App Launcher** | `std::process::Command` + Win32 `IFileOpenDialog`, `IShellLinkW`, `SHGetFileInfoW` | Safe application selection, shortcut target resolution, native icon extraction, and direct process launching without shell interpretation | **Implemented (Phase 6)** in `src-tauri/src/integrations/launcher.rs` |
 | **Startup** | Windows Registry `HKCU\Software\Microsoft\Windows\CurrentVersion\Run` | Optional launch-at-login setting | Typed placeholder model in `integrations/startup.rs` |
 
 ---
@@ -71,7 +71,32 @@ All operating system interactions in `PROJECT_NOTCH` are managed through isolate
   - Switching between coding applications (e.g. from VS Code to Windows Terminal) maintains active session duration.
   - When the user leaves coding applications, the session is marked inactive and the context engine cleanly reveals idle or higher-priority contexts.
 
-### 3.3 Battery Time Remaining
+### 3.3 App Launcher & Safe Process Execution — Phase 6 Implementation
+- **Executable & Shortcut Selection:**
+  - Native Win32 `IFileOpenDialog` with `COMDLG_FILTERSPEC` filtering to `*.exe;*.lnk`.
+  - Executed on a dedicated thread initialized with `COINIT_APARTMENTTHREADED` COM apartment.
+- **Windows Shortcut (`.lnk`) Resolution:**
+  - Utilizes Win32 `IShellLinkW` and `IPersistFile` COM interfaces.
+  - Resolves target binary path via `IShellLinkW::GetPath` and default arguments via `IShellLinkW::GetArguments`.
+  - Derives display name cleanly from shortcut file stem (e.g. `Cap.io.lnk` -> `Cap.io`).
+- **Native Icon Extraction Invariant:**
+  - Win32 `SHGetFileInfoW` (`SHGFI_ICON | SHGFI_LARGEICON`) extracts the application's native `HICON`.
+  - Converts icon via GDI memory device context into 32-bit BGRA DIB bitmap pixels.
+  - Encodes directly into an in-memory 32-bit BMP stream (`data:image/bmp;base64,...`), bypassing disk I/O, Webview asset protocols, and internet searches.
+- **Safe Process Spawning (Anti-Shell Execution Invariant):**
+  - Uses `std::process::Command::new(&app.executable_path).args(&app.args)`.
+  - Executable path and argument array are strictly decoupled.
+  - **Zero shell interpretation:** Never routes commands through `cmd.exe` or `powershell.exe`.
+  - Working directory is anchored to the application binary's parent folder.
+- **Path Verification & Broken App Handling:**
+  - Verifies `std::path::Path::new(&app.executable_path).exists()`.
+  - Missing/moved applications return structured `AppNotFound` errors.
+  - UI offers explicit `Locate` (re-open file picker) and `Remove` options without crashing the companion.
+- **Platform Limitations:**
+  - Universal Windows Platform (UWP) apps packaged without a classic `.exe` (e.g. Windows Calculator UWP packaged stub) require their shortcut `.lnk` in `shell:AppsFolder` or standard `.exe` launcher.
+  - Running elevated processes (requiring UAC elevation) will invoke Windows standard UAC prompt upon launch.
+
+### 3.4 Battery Time Remaining
 - **Limitation:** Modern Windows power drivers frequently return `BATTERY_LIFE_TIME_UNKNOWN` (`0xFFFFFFFF`).
 - **Handling:** Never invent estimated time remaining. Only display percentage and charging state when duration is undefined.
 

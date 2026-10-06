@@ -2,7 +2,7 @@
 
 > Lightweight top-center Windows desktop companion layer.
 
-**Current Stage:** Phase 0 — Technical Foundation Complete  
+**Current Stage:** Phase 6 — App Launcher & Compact Dock Complete  
 **Reference Document:** [PRODUCT_SPEC.md](./PRODUCT_SPEC.md)
 
 ---

@@ -220,4 +220,33 @@ To prevent blocking underlying Windows applications (such as browser tabs and ti
   - Upon session completion, companion Pip triggers a brief celebratory hop and cheerful ear perks (`celebrate` for $3.5\,\text{s}$).
   - Stopping or resetting returns companion Pip to default autonomous `idle` behavior.
 
+---
+
+## 6. Phase 6 — App Launcher & Compact Dock Architecture
+
+### 6.1 Security & Safe Execution Invariant
+- **Direct Process Execution:** Application launching strictly avoids shell command interpolation. Binaries are executed via `std::process::Command::new(&app.executable_path).args(&app.args)`.
+- **Zero Shell Invocation:** Arbitrary strings are never evaluated through `cmd.exe` or `PowerShell.exe`.
+- **Working Directory Anchoring:** Working directory is set to the parent folder of the executable when available to ensure programs requiring local assets launch correctly.
+- **Decoupled Arguments:** The executable path and arguments array are stored and transmitted as separate typed fields.
+
+### 6.2 Shortcut Resolution & Native Icon Extraction
+- **Windows Shortcuts (`.lnk`):** Evaluated via COM `IShellLinkW` and `IPersistFile` interfaces to automatically resolve target binary paths and arguments.
+- **In-Memory 32-bit Icon Extraction:** Extracted via Win32 `SHGetFileInfoW` (`SHGFI_ICON | SHGFI_LARGEICON`), drawn to a memory GDI device context, and converted directly to base64 Data URLs (`data:image/bmp;base64,...`). No network requests, no marketplace, and no third-party icon scrapers.
+
+### 6.3 Local-First Lightweight Persistence
+- **Storage Strategy:** Pinned applications are stored locally in `<AppData>/launcher_apps.json` via Rust `LauncherManager`.
+- **Order & Enabled Flags:** Supports custom ordering and toggleable enablement.
+- **Path Verification:** Upon startup and query, every registered application's path is verified on disk (`exists: bool`).
+
+### 6.4 Compact Dock & Context Priority Integration
+- **Dock Layout:** A restrained horizontal dock showing up to 5 pinned apps before overflow pagination without expanding into a giant grid.
+- **Priority Tier:** Manually opened launcher surfaces register at `P5_USER_SURFACE`. Background coding sessions (`P4`) and active timers (`P2`) take priority when active.
+- **Broken App Handling:** Missing or moved application binaries visually display a warning indicator with immediate `Locate` and `Remove` actions.
+- **Launch Feedback & Coordinated Shell Collapse:**
+  - On launch, companion Pip reacts with a cheerful expression (`happy`).
+  - An internal completion notification briefly displays the launch confirmation (`P1_COMPLETION`).
+  - `shellActions.requestCollapse()` automatically collapses the notch back to resting compact mode so the user can interact with the launched app.
+
+
 

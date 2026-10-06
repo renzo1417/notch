@@ -52,6 +52,8 @@
       ? timerStore.formattedCompact
       : activeCandidate.mode === "coding"
       ? compactCodingLabel
+      : activeCandidate.mode === "launcher"
+      ? "Apps Dock"
       : activeCandidate.mode === "notification"
       ? (typeof activeCandidate.data === "string"
           ? activeCandidate.data
@@ -73,9 +75,10 @@
       class:connected={backendConnected}
       class:timer={activeCandidate.mode === "timer"}
       class:coding={activeCandidate.mode === "coding"}
+      class:launcher={activeCandidate.mode === "launcher"}
       class:notification={activeCandidate.mode === "notification"}
       aria-hidden="true"
-      title={activeCandidate.mode === "timer" ? `Focus Timer: ${timerStore.formattedTime}` : activeCandidate.mode === "coding" ? `Coding: ${compactCodingLabel}` : backendConnected ? "Native backend connected" : "Connecting to backend..."}
+      title={activeCandidate.mode === "timer" ? `Focus Timer: ${timerStore.formattedTime}` : activeCandidate.mode === "coding" ? `Coding: ${compactCodingLabel}` : activeCandidate.mode === "launcher" ? "Apps Dock" : backendConnected ? "Native backend connected" : "Connecting to backend..."}
     ></div>
     <span class="center-label" title={compactLabel}>{compactLabel}</span>
   </div>
@@ -149,6 +152,10 @@
 
   .status-dot.coding {
     background-color: #38bdf8;
+  }
+
+  .status-dot.launcher {
+    background-color: #818cf8;
   }
 
   .status-dot.notification {

@@ -26,6 +26,15 @@ pub fn run() {
             commands::coding::get_coding_session,
             commands::coding::set_coding_project_label,
             commands::coding::reset_coding_session,
+            commands::launcher::get_launcher_apps,
+            commands::launcher::pick_app_file,
+            commands::launcher::inspect_app_file,
+            commands::launcher::add_launcher_app,
+            commands::launcher::update_launcher_app,
+            commands::launcher::remove_launcher_app,
+            commands::launcher::reorder_launcher_apps,
+            commands::launcher::locate_app,
+            commands::launcher::launch_app,
         ])
         .setup(|app| {
             let handle = app.handle();
@@ -35,6 +44,10 @@ pub fn run() {
             media_mgr.init(handle.clone());
             let fg_mgr = app.state::<AppState>().foreground_manager.clone();
             fg_mgr.init(handle.clone());
+            let launcher_mgr = app.state::<AppState>().launcher_manager.clone();
+            if let Ok(app_data_dir) = handle.path().app_data_dir() {
+                launcher_mgr.init(app_data_dir);
+            }
             Ok(())
         })
 

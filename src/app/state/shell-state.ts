@@ -25,3 +25,24 @@ export const SHELL_STATE_DIMENSIONS: Record<NotchShellState, ShellDimensions> = 
   panel: { width: 560, height: 160, windowWidth: 592, windowHeight: 172 },
   settings: { width: 560, height: 280, windowWidth: 592, windowHeight: 292 },
 };
+
+type CollapseListener = () => void;
+
+class ShellActionBus {
+  private collapseListeners = new Set<CollapseListener>();
+
+  onCollapse(fn: CollapseListener): () => void {
+    this.collapseListeners.add(fn);
+    return () => {
+      this.collapseListeners.delete(fn);
+    };
+  }
+
+  requestCollapse(): void {
+    for (const fn of this.collapseListeners) {
+      fn();
+    }
+  }
+}
+
+export const shellActions = new ShellActionBus();

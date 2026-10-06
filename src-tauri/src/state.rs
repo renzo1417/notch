@@ -1,6 +1,7 @@
 use serde::{Deserialize, Serialize};
 use std::sync::{Arc, Mutex};
 use crate::integrations::foreground::ForegroundManager;
+use crate::integrations::launcher::LauncherManager;
 use crate::integrations::media::MediaManager;
 
 /// Runtime configuration for the notch shell window.
@@ -27,6 +28,7 @@ pub struct AppState {
     pub shell_config: Mutex<ShellConfig>,
     pub media_manager: Arc<MediaManager>,
     pub foreground_manager: Arc<ForegroundManager>,
+    pub launcher_manager: Arc<LauncherManager>,
 }
 
 impl Default for AppState {
@@ -36,6 +38,7 @@ impl Default for AppState {
             shell_config: Mutex::new(ShellConfig::default()),
             media_manager: Arc::new(MediaManager::new()),
             foreground_manager: Arc::new(ForegroundManager::new()),
+            launcher_manager: Arc::new(LauncherManager::new()),
         }
     }
 }

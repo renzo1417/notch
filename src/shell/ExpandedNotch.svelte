@@ -5,8 +5,11 @@
   import CodingContextView from "../modules/coding/CodingContextView.svelte";
   import FocusTimerView from "../modules/timer/FocusTimerView.svelte";
   import NotificationContextView from "../modules/notifications/NotificationContextView.svelte";
+  import LauncherDockView from "../modules/launcher/LauncherDockView.svelte";
   import { timerStore } from "../modules/timer/timer-store.svelte";
+  import { launcherStore } from "../modules/launcher/launcher-store.svelte";
   import IconTimer from "../icons/IconTimer.svelte";
+  import IconApp from "../icons/IconApp.svelte";
   import { contextEngine, type ContextCandidate } from "../app/state/context-engine";
   import type { MascotState } from "../mascot/types";
 
@@ -52,6 +55,8 @@
   <div class="zone center-zone" aria-label="Context surface: {activeCandidate.mode}">
     {#if activeCandidate.mode === "notification"}
       <NotificationContextView />
+    {:else if activeCandidate.mode === "launcher"}
+      <LauncherDockView />
     {:else if activeCandidate.mode === "timer"}
       <FocusTimerView />
     {:else if activeCandidate.mode === "coding"}
@@ -71,19 +76,34 @@
         <div class="context-body">
           <div class="idle-title-row">
             <span class="context-title" title="Windows Notch Active">Windows Notch Active</span>
-            <button
-              type="button"
-              class="quick-focus-trigger"
-              onclick={(e) => {
-                e.stopPropagation();
-                timerStore.openTimerSurface();
-              }}
-              title="Open Focus Timer"
-              aria-label="Open Focus Timer"
-            >
-              <IconTimer size={10} color="var(--text-secondary)" />
-              <span>Focus</span>
-            </button>
+            <div class="idle-quick-actions">
+              <button
+                type="button"
+                class="quick-action-trigger"
+                onclick={(e) => {
+                  e.stopPropagation();
+                  launcherStore.openLauncherSurface();
+                }}
+                title="Open Apps Dock"
+                aria-label="Open Apps Dock"
+              >
+                <IconApp size={10} color="var(--text-secondary)" />
+                <span>Apps</span>
+              </button>
+              <button
+                type="button"
+                class="quick-action-trigger"
+                onclick={(e) => {
+                  e.stopPropagation();
+                  timerStore.openTimerSurface();
+                }}
+                title="Open Focus Timer"
+                aria-label="Open Focus Timer"
+              >
+                <IconTimer size={10} color="var(--text-secondary)" />
+                <span>Focus</span>
+              </button>
+            </div>
           </div>
           <span class="context-meta" title="Quiet desktop companion layer">Quiet top-center companion layer</span>
         </div>
@@ -198,14 +218,21 @@
     text-overflow: ellipsis;
   }
 
-  .quick-focus-trigger {
-    display: inline-flex;
+  .idle-quick-actions {
+    display: flex;
     align-items: center;
     gap: 4px;
+    flex-shrink: 0;
+  }
+
+  .quick-action-trigger {
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
     background: var(--surface-raised);
     border: 1px solid var(--border-subtle);
     border-radius: 4px;
-    padding: 1px 6px;
+    padding: 1px 5px;
     font-size: var(--font-size-tiny);
     font-weight: 500;
     color: var(--text-secondary);
@@ -215,10 +242,10 @@
     flex-shrink: 0;
   }
 
-  .quick-focus-trigger:hover {
+  .quick-action-trigger:hover {
     background-color: var(--surface-hover);
     color: var(--text-primary);
-    border-color: rgba(45, 212, 191, 0.4);
+    border-color: rgba(255, 255, 255, 0.2);
   }
 
   .context-meta {

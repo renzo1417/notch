@@ -79,3 +79,7 @@ EBWebView/
 # Workspace & Agent Scratch
 .agents/
 .gemini/
+
+# Local Runtime Data & Config
+launcher_apps.json
+*.local.json

@@ -4,6 +4,7 @@
   import CompactNotch from "./CompactNotch.svelte";
   import ExpandedNotch from "./ExpandedNotch.svelte";
   import type { NotchShellState } from "../app/state/shell-state";
+  import { shellActions } from "../app/state/shell-state";
   import { SHELL_MOTION } from "./shell-motion";
 
   interface PingResponse {
@@ -16,6 +17,7 @@
   let shellState = $state<NotchShellState>("compact");
   let backendConnected = $state(false);
   let collapseTimeout: ReturnType<typeof setTimeout> | null = null;
+  let unsubCollapse: (() => void) | null = null;
 
   async function syncWindowState(state: "compact" | "expanded") {
     try {
@@ -36,6 +38,20 @@
     }
   }
 
+  function collapseNotch() {
+    if (collapseTimeout) {
+      clearTimeout(collapseTimeout);
+      collapseTimeout = null;
+    }
+    if (shellState === "expanded") {
+      shellState = "compact";
+      collapseTimeout = setTimeout(() => {
+        syncWindowState("compact");
+        collapseTimeout = null;
+      }, SHELL_MOTION.shellMs);
+    }
+  }
+
   async function toggleExpansion() {
     if (collapseTimeout) {
       clearTimeout(collapseTimeout);
@@ -48,13 +64,7 @@
       // 2. Trigger CSS expansion animation
       shellState = "expanded";
     } else {
-      // 1. Trigger CSS collapse animation
-      shellState = "compact";
-      // 2. After CSS animation completes, shrink the native window bounds to keep hit area tight
-      collapseTimeout = setTimeout(() => {
-        syncWindowState("compact");
-        collapseTimeout = null;
-      }, SHELL_MOTION.shellMs);
+      collapseNotch();
     }
   }
 
@@ -69,11 +79,17 @@
     checkBackend();
     // Ensure initial compact placement
     syncWindowState("compact");
+    unsubCollapse = shellActions.onCollapse(() => {
+      collapseNotch();
+    });
   });
 
   onDestroy(() => {
     if (collapseTimeout) {
       clearTimeout(collapseTimeout);
+    }
+    if (unsubCollapse) {
+      unsubCollapse();
     }
   });
 </script>
