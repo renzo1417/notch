@@ -198,3 +198,26 @@ To prevent blocking underlying Windows applications (such as browser tabs and ti
 - **Close Interception:** Standard `WindowEvent::CloseRequested` is intercepted via `api.prevent_close()` and redirects to `window.hide()`, guaranteeing the notch remains alive in the tray until explicit user termination.
 - **Tray Icon Click:** Left-clicking the system tray icon toggles notch visibility.
 
+---
+
+## 5. Phase 5 — Focus Timer Architecture
+
+### 5.1 Timestamp-Based Drift-Free Countdown Engine
+- **No Simple Decrement Loop:** Rather than blindly decrementing an integer second counter once every $1000\,\text{ms}$ (which drifts rapidly due to OS timer coalescing and Webview background throttling), the focus timer calculates remaining seconds strictly from system wall-clock timestamps:
+  $$\text{remaining\_seconds} = \max\left(0, \left\lceil \frac{\text{end\_timestamp\_ms} - \text{Date.now}()}{1000} \right\rceil\right)$$
+- **Paused Accuracy:** Pausing freezes the remaining milliseconds and clears the end timestamp. Resuming establishes a fresh `endTimestampMs = Date.now() + remaining_seconds * 1000`.
+- **Collapsed Continuity:** Because the timer engine runs in the persistent Webview singleton (`timerStore` / `FocusTimerEngine`), it continues ticking with full timestamp accuracy while the notch shell is collapsed to compact resting geometry.
+
+### 5.2 Context Priority Integration (P2 Outranks P4)
+- **Active Precedence:** Active focus countdowns register in `ContextEngine` as `P2_FOCUS_TIMER`. This deterministically outranks background coding sessions (`P4_CODING`), elevating the focus timer to the center zone.
+- **Manual Configuration Surface:** When opened prior to starting, the timer surface registers as `P5_USER_SURFACE`. Starting promotes the candidate immediately to `P2_FOCUS_TIMER`.
+- **Clean Reset & Fallback:** Stopping or resetting the timer unregisters candidate `timer`, seamlessly revealing any active coding session (`P4`) or returning to idle (`P6`).
+
+### 5.3 Completion Lifecycle & Companion Reaction
+- **Internal Notification (P1):** Natural countdown completion pushes an internal notification candidate into `ContextEngine` at `P1_COMPLETION` with a $4.5\,\text{s}$ expiration window. This temporarily supersedes both coding and timer contexts, then seamlessly restores the prior state upon expiration.
+- **Companion Emotional Synchronization:**
+  - While timer is running (`isRunning && !isPaused`), companion Pip assumes a determined `focused` visor expression (`#2dd4bf` ice teal visor slits).
+  - Upon session completion, companion Pip triggers a brief celebratory hop and cheerful ear perks (`celebrate` for $3.5\,\text{s}$).
+  - Stopping or resetting returns companion Pip to default autonomous `idle` behavior.
+
+

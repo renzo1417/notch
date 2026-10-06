@@ -4,6 +4,7 @@
   import IconMusic from "../icons/IconMusic.svelte";
   import { mediaStore } from "../modules/music/media-store.svelte";
   import { codingStore } from "../modules/coding/coding-store.svelte";
+  import { timerStore } from "../modules/timer/timer-store.svelte";
   import { contextEngine, type ContextCandidate } from "../app/state/context-engine";
 
   interface Props {
@@ -47,10 +48,14 @@
   );
 
   const compactLabel = $derived(
-    activeCandidate.mode === "coding"
+    activeCandidate.mode === "timer"
+      ? timerStore.formattedCompact
+      : activeCandidate.mode === "coding"
       ? compactCodingLabel
       : activeCandidate.mode === "notification"
-      ? (typeof activeCandidate.data === "string" ? activeCandidate.data : "Notification")
+      ? (typeof activeCandidate.data === "string"
+          ? activeCandidate.data
+          : (activeCandidate.data as { title?: string })?.title || "Notification")
       : "Windows Notch"
   );
 </script>
@@ -66,9 +71,11 @@
     <div
       class="status-dot"
       class:connected={backendConnected}
+      class:timer={activeCandidate.mode === "timer"}
       class:coding={activeCandidate.mode === "coding"}
+      class:notification={activeCandidate.mode === "notification"}
       aria-hidden="true"
-      title={activeCandidate.mode === "coding" ? `Coding: ${compactCodingLabel}` : backendConnected ? "Native backend connected" : "Connecting to backend..."}
+      title={activeCandidate.mode === "timer" ? `Focus Timer: ${timerStore.formattedTime}` : activeCandidate.mode === "coding" ? `Coding: ${compactCodingLabel}` : backendConnected ? "Native backend connected" : "Connecting to backend..."}
     ></div>
     <span class="center-label" title={compactLabel}>{compactLabel}</span>
   </div>
@@ -136,8 +143,16 @@
     background-color: #22c55e;
   }
 
+  .status-dot.timer {
+    background-color: #2dd4bf;
+  }
+
   .status-dot.coding {
     background-color: #38bdf8;
+  }
+
+  .status-dot.notification {
+    background-color: #22c55e;
   }
 
   .center-label {

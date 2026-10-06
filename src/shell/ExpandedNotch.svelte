@@ -3,6 +3,10 @@
   import MascotCanvas from "../mascot/MascotCanvas.svelte";
   import MusicModule from "../modules/music/MusicModule.svelte";
   import CodingContextView from "../modules/coding/CodingContextView.svelte";
+  import FocusTimerView from "../modules/timer/FocusTimerView.svelte";
+  import NotificationContextView from "../modules/notifications/NotificationContextView.svelte";
+  import { timerStore } from "../modules/timer/timer-store.svelte";
+  import IconTimer from "../icons/IconTimer.svelte";
   import { contextEngine, type ContextCandidate } from "../app/state/context-engine";
   import type { MascotState } from "../mascot/types";
 
@@ -46,7 +50,11 @@
 
   <!-- CENTER ZONE: Context Surface -->
   <div class="zone center-zone" aria-label="Context surface: {activeCandidate.mode}">
-    {#if activeCandidate.mode === "coding"}
+    {#if activeCandidate.mode === "notification"}
+      <NotificationContextView />
+    {:else if activeCandidate.mode === "timer"}
+      <FocusTimerView />
+    {:else if activeCandidate.mode === "coding"}
       <CodingContextView />
     {:else}
       <!-- Default Idle Surface -->
@@ -61,7 +69,22 @@
           ></div>
         </div>
         <div class="context-body">
-          <span class="context-title" title="Windows Notch Active">Windows Notch Active</span>
+          <div class="idle-title-row">
+            <span class="context-title" title="Windows Notch Active">Windows Notch Active</span>
+            <button
+              type="button"
+              class="quick-focus-trigger"
+              onclick={(e) => {
+                e.stopPropagation();
+                timerStore.openTimerSurface();
+              }}
+              title="Open Focus Timer"
+              aria-label="Open Focus Timer"
+            >
+              <IconTimer size={10} color="var(--text-secondary)" />
+              <span>Focus</span>
+            </button>
+          </div>
           <span class="context-meta" title="Quiet desktop companion layer">Quiet top-center companion layer</span>
         </div>
       </div>
@@ -157,6 +180,14 @@
     min-width: 0;
   }
 
+  .idle-title-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-8);
+    min-width: 0;
+  }
+
   .context-title {
     font-size: var(--font-size-body);
     font-weight: 600;
@@ -165,6 +196,29 @@
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+  }
+
+  .quick-focus-trigger {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    background: var(--surface-raised);
+    border: 1px solid var(--border-subtle);
+    border-radius: 4px;
+    padding: 1px 6px;
+    font-size: var(--font-size-tiny);
+    font-weight: 500;
+    color: var(--text-secondary);
+    cursor: pointer;
+    line-height: 1.2;
+    transition: all var(--motion-micro) var(--ease-natural);
+    flex-shrink: 0;
+  }
+
+  .quick-focus-trigger:hover {
+    background-color: var(--surface-hover);
+    color: var(--text-primary);
+    border-color: rgba(45, 212, 191, 0.4);
   }
 
   .context-meta {

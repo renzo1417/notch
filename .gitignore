@@ -71,3 +71,11 @@ Thumbs.db
 ehthumbs.db
 ehthumbs_vista.db
 $RECYCLE.BIN/
+
+# WebView2 Runtime Artifacts
+EBWebView/
+*.WebView2/
+
+# Workspace & Agent Scratch
+.agents/
+.gemini/

@@ -2,6 +2,7 @@
   import { onMount, onDestroy } from "svelte";
   import { MascotRenderer } from "./renderer";
   import { MascotStateMachine } from "./state-machine";
+  import { mascotStore } from "./mascot-store.svelte";
   import type { MascotConfig, MascotState } from "./types";
 
   interface Props {
@@ -27,6 +28,7 @@
   let lastFrameTimeMs: number = 0;
   let isWindowVisible: boolean = true;
   let isHovered: boolean = $state(false);
+  let unsubMascot: (() => void) | null = null;
 
   const config: MascotConfig = {
     enabled: true,
@@ -138,6 +140,10 @@
     renderer = new MascotRenderer();
     stateMachine = new MascotStateMachine(config, updateAriaState);
 
+    unsubMascot = mascotStore.subscribe((state, durationMs) => {
+      stateMachine?.setState(state, durationMs);
+    });
+
     setupCanvasDpr();
     window.addEventListener("pointermove", handlePointerMove, { passive: true });
     window.addEventListener("resize", setupCanvasDpr, { passive: true });
@@ -149,6 +155,10 @@
   onDestroy(() => {
     if (animationFrameId !== null) {
       cancelAnimationFrame(animationFrameId);
+    }
+    if (unsubMascot) {
+      unsubMascot();
+      unsubMascot = null;
     }
     window.removeEventListener("pointermove", handlePointerMove);
     window.removeEventListener("resize", setupCanvasDpr);
