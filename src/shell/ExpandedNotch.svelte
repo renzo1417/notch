@@ -6,10 +6,16 @@
   import FocusTimerView from "../modules/timer/FocusTimerView.svelte";
   import NotificationContextView from "../modules/notifications/NotificationContextView.svelte";
   import LauncherDockView from "../modules/launcher/LauncherDockView.svelte";
+  import ClipboardContextView from "../modules/clipboard/ClipboardContextView.svelte";
+  import BatteryContextView from "../modules/battery/BatteryContextView.svelte";
   import { timerStore } from "../modules/timer/timer-store.svelte";
   import { launcherStore } from "../modules/launcher/launcher-store.svelte";
+  import { clipboardStore } from "../modules/clipboard/clipboard-store.svelte";
+  import { batteryStore } from "../modules/battery/battery-store.svelte";
   import IconTimer from "../icons/IconTimer.svelte";
   import IconApp from "../icons/IconApp.svelte";
+  import IconClipboard from "../icons/IconClipboard.svelte";
+  import IconBattery from "../icons/IconBattery.svelte";
   import { contextEngine, type ContextCandidate } from "../app/state/context-engine";
   import type { MascotState } from "../mascot/types";
 
@@ -57,6 +63,10 @@
       <NotificationContextView />
     {:else if activeCandidate.mode === "launcher"}
       <LauncherDockView />
+    {:else if activeCandidate.mode === "clipboard"}
+      <ClipboardContextView />
+    {:else if activeCandidate.mode === "battery"}
+      <BatteryContextView />
     {:else if activeCandidate.mode === "timer"}
       <FocusTimerView />
     {:else if activeCandidate.mode === "coding"}
@@ -102,6 +112,38 @@
               >
                 <IconTimer size={10} color="var(--text-secondary)" />
                 <span>Focus</span>
+              </button>
+              <button
+                type="button"
+                class="quick-action-trigger"
+                onclick={(e) => {
+                  e.stopPropagation();
+                  clipboardStore.openClipboardSurface();
+                }}
+                title="Open Clipboard History"
+                aria-label="Open Clipboard History"
+              >
+                <IconClipboard size={10} color="var(--text-secondary)" />
+                <span>Clip</span>
+              </button>
+              <button
+                type="button"
+                class="quick-action-trigger"
+                class:low-battery={batteryStore.isLowBattery}
+                onclick={(e) => {
+                  e.stopPropagation();
+                  batteryStore.openBatterySurface();
+                }}
+                title="Open Battery Details ({batteryStore.statusSummary})"
+                aria-label="Open Battery Details"
+              >
+                <IconBattery
+                  size={10}
+                  color={batteryStore.isLowBattery ? "#ef4444" : "var(--text-secondary)"}
+                  charging={batteryStore.isCharging}
+                  level={batteryStore.percentage}
+                />
+                <span>{batteryStore.formattedPercent}</span>
               </button>
             </div>
           </div>
@@ -246,6 +288,11 @@
     background-color: var(--surface-hover);
     color: var(--text-primary);
     border-color: rgba(255, 255, 255, 0.2);
+  }
+
+  .quick-action-trigger.low-battery {
+    border-color: rgba(239, 68, 68, 0.4);
+    color: #ef4444;
   }
 
   .context-meta {

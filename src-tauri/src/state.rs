@@ -1,8 +1,10 @@
 use serde::{Deserialize, Serialize};
 use std::sync::{Arc, Mutex};
+use crate::integrations::clipboard::ClipboardManager;
 use crate::integrations::foreground::ForegroundManager;
 use crate::integrations::launcher::LauncherManager;
 use crate::integrations::media::MediaManager;
+use crate::integrations::power::PowerManager;
 
 /// Runtime configuration for the notch shell window.
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -29,6 +31,8 @@ pub struct AppState {
     pub media_manager: Arc<MediaManager>,
     pub foreground_manager: Arc<ForegroundManager>,
     pub launcher_manager: Arc<LauncherManager>,
+    pub clipboard_manager: Arc<ClipboardManager>,
+    pub power_manager: Arc<PowerManager>,
 }
 
 impl Default for AppState {
@@ -39,7 +43,8 @@ impl Default for AppState {
             media_manager: Arc::new(MediaManager::new()),
             foreground_manager: Arc::new(ForegroundManager::new()),
             launcher_manager: Arc::new(LauncherManager::new()),
+            clipboard_manager: Arc::new(ClipboardManager::new()),
+            power_manager: Arc::new(PowerManager::new()),
         }
     }
 }
-

@@ -35,6 +35,14 @@ pub fn run() {
             commands::launcher::reorder_launcher_apps,
             commands::launcher::locate_app,
             commands::launcher::launch_app,
+            commands::clipboard::get_clipboard_history,
+            commands::clipboard::copy_to_clipboard,
+            commands::clipboard::clear_clipboard_history,
+            commands::clipboard::set_clipboard_paused,
+            commands::clipboard::is_clipboard_paused,
+            commands::clipboard::set_clipboard_max_items,
+            commands::battery::get_battery_state,
+            commands::battery::refresh_battery_state,
         ])
         .setup(|app| {
             let handle = app.handle();
@@ -48,9 +56,12 @@ pub fn run() {
             if let Ok(app_data_dir) = handle.path().app_data_dir() {
                 launcher_mgr.init(app_data_dir);
             }
+            let clipboard_mgr = app.state::<AppState>().clipboard_manager.clone();
+            clipboard_mgr.init(handle.clone());
+            let power_mgr = app.state::<AppState>().power_manager.clone();
+            power_mgr.init(handle.clone());
             Ok(())
         })
-
         .on_window_event(|window, event| match event {
             // Hiding on close prevents accidental app termination; only explicit Quit terminates
             tauri::WindowEvent::CloseRequested { api, .. } => {

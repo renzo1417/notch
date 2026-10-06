@@ -23,8 +23,8 @@ All operating system interactions in `PROJECT_NOTCH` are managed through isolate
 | :--- | :--- | :--- | :--- |
 | **Media** | `Windows.Media.Control.GlobalSystemMediaTransportControlsSessionManager` (GSMTC) | Active audio session discovery, metadata, artwork stream, transport controls, native events | **Implemented (Phase 3)** in `src-tauri/src/integrations/media.rs` |
 | **Foreground Process & Coding** | Win32 `SetWinEventHook` (`EVENT_SYSTEM_FOREGROUND`) + `QueryFullProcessImageNameW` | Event-driven debounced active editor detection (VS Code, Visual Studio, JetBrains, Terminals, Antigravity) with session duration | **Implemented (Phase 4)** in `src-tauri/src/integrations/foreground.rs` |
-| **Power & Battery** | Win32 `GetSystemPowerStatus` | Battery percentage, AC/DC status, charging indicator | Typed placeholder model in `integrations/power.rs` |
-| **Clipboard** | Win32 `AddClipboardFormatListener` & `WM_CLIPBOARDUPDATE` | Event-driven text clipboard change notifications | Typed placeholder model in `integrations/clipboard.rs` |
+| **Power & Battery** | Win32 `GetSystemPowerStatus` | Battery percentage, AC/battery source, charging indicator, valid remaining time | **Implemented (Phase 7)** in `src-tauri/src/integrations/power.rs` |
+| **Clipboard** | Win32 `AddClipboardFormatListener` & `WM_CLIPBOARDUPDATE` | Event-driven text clipboard change notifications, consecutive deduplication, volatile memory privacy | **Implemented (Phase 7)** in `src-tauri/src/integrations/clipboard.rs` |
 | **Downloads Watcher** | Filesystem change events on configured watch directories | Watched folder change awareness | Typed placeholder model in `integrations/downloads.rs` |
 | **App Launcher** | `std::process::Command` + Win32 `IFileOpenDialog`, `IShellLinkW`, `SHGetFileInfoW` | Safe application selection, shortcut target resolution, native icon extraction, and direct process launching without shell interpretation | **Implemented (Phase 6)** in `src-tauri/src/integrations/launcher.rs` |
 | **Startup** | Windows Registry `HKCU\Software\Microsoft\Windows\CurrentVersion\Run` | Optional launch-at-login setting | Typed placeholder model in `integrations/startup.rs` |
@@ -96,15 +96,41 @@ All operating system interactions in `PROJECT_NOTCH` are managed through isolate
   - Universal Windows Platform (UWP) apps packaged without a classic `.exe` (e.g. Windows Calculator UWP packaged stub) require their shortcut `.lnk` in `shell:AppsFolder` or standard `.exe` launcher.
   - Running elevated processes (requiring UAC elevation) will invoke Windows standard UAC prompt upon launch.
 
-### 3.4 Battery Time Remaining
-- **Limitation:** Modern Windows power drivers frequently return `BATTERY_LIFE_TIME_UNKNOWN` (`0xFFFFFFFF`).
-- **Handling:** Never invent estimated time remaining. Only display percentage and charging state when duration is undefined.
+### 3.4 Power & Battery — Phase 7 Implementation
+- **API Mechanism:** Win32 `GetSystemPowerStatus` via `windows::Win32::System::Power`.
+- **Exposed Signals:**
+  - `has_battery`: distinguishes desktop machines without batteries from battery-powered laptops.
+  - `percentage`: 0 to 100 integer.
+  - `is_charging`: derived from `BatteryFlag & 8` or AC line online status.
+  - `is_ac_connected`: online status (`ACLineStatus == 1`).
+  - `remaining_seconds`: exact remaining time only if Windows kernel supplies a non-sentinel value (`BatteryLifeTime != 0xFFFFFFFF` and `> 0`).
+- **Invariants:**
+  - **Never fabricate remaining time:** When Windows returns unknown/sentinel remaining duration or system is on AC power, remaining seconds is cleanly reported as `None`.
+  - **Conservative internal notification:** Crossing below 20% on battery generates a single internal notification and sets a subtle mascot warning state; latches to avoid repetitive alert spam until recharged.
+- **Platform Limitations:**
+  - Many modern Windows OEM battery drivers do not compute battery duration immediately after unplugging, returning sentinel `0xFFFFFFFF` for several minutes until drain rates settle. The notch displays pure percentage without faking estimates.
 
-### 3.4 Global Download Progress
+### 3.5 Clipboard Listener & History — Phase 7 Implementation
+- **API Mechanism:** Win32 `AddClipboardFormatListener` and `WM_CLIPBOARDUPDATE` on a dedicated message-pump thread with clean `RemoveClipboardFormatListener` on shutdown.
+- **Text Retrieval:**
+  - Unicode text only (`CF_UNICODETEXT`).
+  - Read via `OpenClipboard`, `GetClipboardData`, `GlobalLock`, and `GlobalUnlock`.
+  - Non-text formats (images, files) are strictly ignored in accordance with MVP specifications.
+- **Privacy & Storage Invariants:**
+  - **Volatile memory only:** History entries exist in memory; disk persistence is OFF by default.
+  - **Zero logging:** Clipboard text is never output to stdout, debug logs, or production traces.
+  - **Zero network transmission:** Local-first invariant strictly maintained.
+  - **User-initiated surface:** Background clipboard updates do NOT replace or hijack the active center context. History surface is opened intentionally by the user via the `Clip` action trigger or shortcut.
+- **History Controls:**
+  - Deduplicates identical consecutive entries.
+  - Configurable maximum history size (1..=100 items, default 25).
+  - User pause/resume toggle (`is_paused`).
+  - User clear history action.
+- **Platform Limitations:**
+  - If another application holds exclusive locks on the clipboard during clipboard updates, `OpenClipboard` is retried with backoff. If permanently locked, the update is dropped cleanly without crashing.
+
+### 3.6 Global Download Progress
 - **Limitation:** Windows does not provide a centralized operating system API to inspect browser download byte progress.
 - **Handling:** The user configures watched download folders. Filesystem events observe active `.crdownload`, `.part`, or temporary file extensions and confirm completion. Progress percentages are only rendered if a genuine size signal exists.
 
-### 3.5 Clipboard Privacy
-- **Limitation:** Clipboard listeners can capture sensitive text (passwords, tokens).
-- **Handling:** History capture is paused when notch is disabled or privacy mode is engaged; clipboard history is kept strictly in volatile memory and is never written to disk unless explicitly enabled.
 

@@ -82,4 +82,7 @@ EBWebView/
 
 # Local Runtime Data & Config
 launcher_apps.json
+clipboard_history.json
 *.local.json
+*.tmp
+*.temp

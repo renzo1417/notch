@@ -7,3 +7,9 @@ export interface ClipboardItem {
   text: string;
   timestampMs: number;
 }
+
+export interface ClipboardState {
+  items: ClipboardItem[];
+  isPaused: boolean;
+  maxItems: number;
+}

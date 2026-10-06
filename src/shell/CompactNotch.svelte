@@ -5,6 +5,8 @@
   import { mediaStore } from "../modules/music/media-store.svelte";
   import { codingStore } from "../modules/coding/coding-store.svelte";
   import { timerStore } from "../modules/timer/timer-store.svelte";
+  import { clipboardStore } from "../modules/clipboard/clipboard-store.svelte";
+  import { batteryStore } from "../modules/battery/battery-store.svelte";
   import { contextEngine, type ContextCandidate } from "../app/state/context-engine";
 
   interface Props {
@@ -19,6 +21,8 @@
   onMount(() => {
     mediaStore.init();
     codingStore.init();
+    clipboardStore.init();
+    batteryStore.init();
     unsubContext = contextEngine.subscribe((cand) => {
       activeCandidate = cand;
     });
@@ -54,6 +58,10 @@
       ? compactCodingLabel
       : activeCandidate.mode === "launcher"
       ? "Apps Dock"
+      : activeCandidate.mode === "clipboard"
+      ? (clipboardStore.isPaused ? "Clipboard (Paused)" : `Clipboard · ${clipboardStore.count} items`)
+      : activeCandidate.mode === "battery"
+      ? batteryStore.statusSummary
       : activeCandidate.mode === "notification"
       ? (typeof activeCandidate.data === "string"
           ? activeCandidate.data
@@ -76,9 +84,24 @@
       class:timer={activeCandidate.mode === "timer"}
       class:coding={activeCandidate.mode === "coding"}
       class:launcher={activeCandidate.mode === "launcher"}
+      class:clipboard={activeCandidate.mode === "clipboard"}
+      class:battery={activeCandidate.mode === "battery"}
+      class:low-battery={activeCandidate.mode === "battery" && batteryStore.isLowBattery}
       class:notification={activeCandidate.mode === "notification"}
       aria-hidden="true"
-      title={activeCandidate.mode === "timer" ? `Focus Timer: ${timerStore.formattedTime}` : activeCandidate.mode === "coding" ? `Coding: ${compactCodingLabel}` : activeCandidate.mode === "launcher" ? "Apps Dock" : backendConnected ? "Native backend connected" : "Connecting to backend..."}
+      title={activeCandidate.mode === "timer"
+        ? `Focus Timer: ${timerStore.formattedTime}`
+        : activeCandidate.mode === "coding"
+        ? `Coding: ${compactCodingLabel}`
+        : activeCandidate.mode === "launcher"
+        ? "Apps Dock"
+        : activeCandidate.mode === "clipboard"
+        ? `Clipboard: ${clipboardStore.count} items`
+        : activeCandidate.mode === "battery"
+        ? `Battery: ${batteryStore.statusSummary}`
+        : backendConnected
+        ? "Native backend connected"
+        : "Connecting to backend..."}
     ></div>
     <span class="center-label" title={compactLabel}>{compactLabel}</span>
   </div>
@@ -100,7 +123,6 @@
     {/if}
   </div>
 </div>
-
 
 <style>
   .compact-layout {
@@ -158,6 +180,18 @@
     background-color: #818cf8;
   }
 
+  .status-dot.clipboard {
+    background-color: #c084fc;
+  }
+
+  .status-dot.battery {
+    background-color: #22c55e;
+  }
+
+  .status-dot.battery.low-battery {
+    background-color: #ef4444;
+  }
+
   .status-dot.notification {
     background-color: #22c55e;
   }
@@ -196,4 +230,3 @@
     object-fit: cover;
   }
 </style>
-
