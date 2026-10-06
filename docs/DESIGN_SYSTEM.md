@@ -107,3 +107,41 @@ Motion communicates discrete state transitions rather than ambient decoration.
 ```
 
 Reduced motion preferences (`prefers-reduced-motion: reduce`) clamp all timing variables to `0ms`.
+
+---
+
+## 5. Three-Zone Expanded Layout Architecture
+
+The notch expanded shell (520px wide by 76px tall) is partitioned into three purposeful zones:
+
+```text
+┌──────────────────────────────────────────────────────────────────┐
+│   LEFT (Mascot)   │       CENTER (Context)       │ RIGHT (Music) │
+│       ~96px       │            ~248px            │     176px     │
+└──────────────────────────────────────────────────────────────────┘
+```
+
+### 5.1 Left Zone: Procedural Companion (~96px, 18–20% visual balance)
+- Houses procedural 2D Canvas companion "Pip" (64px canvas, 72px cell).
+- Interactive hover and click dynamics (squash, gaze tracking, mood reactions).
+- Separated optically by subtle vertical divider `--border-subtle`.
+
+### 5.2 Center Zone: Context Surface (~248px, 42–46% visual balance)
+- Flexible container (`flex: 1`, `min-width: 0`) resilient to long titles.
+- Strict typography scale:
+  - Header badge / context category: `10px` uppercase semibold (`--text-tertiary`).
+  - Primary title: `13px` semibold (`--text-primary`), single line ellipsis.
+  - Context detail: `11px` normal (`--text-secondary`), single line ellipsis.
+- Bounded on both sides with 1px `--border-subtle` dividers.
+- No fake charts, no cards-in-cards, no decorative blobs.
+
+### 5.3 Right Zone: Media Module Placeholder (176px, 34–36% visual balance)
+- Fixed geometry: never resizes or jitters regardless of track status.
+- Left slot: 38×38px artwork container (`--surface-raised`, 8px radius, vector music icon).
+- Right slot: Truncated track title (12px semibold), artist/source (10px tertiary), and vector playback transport controls row (Previous, Play/Pause, Next) subdued when idle.
+
+### 5.4 Compact Surface (300px × 38px)
+- Left: Mini mascot avatar (26×26px canvas).
+- Center: Immediate status summary (`--font-size-label` semibold).
+- Right: Subdued 13px vector music indicator.
+

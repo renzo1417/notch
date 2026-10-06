@@ -7,10 +7,13 @@ node_modules/
 dist/
 dist-ssr/
 build/
+coverage/
+.nyc_output/
 *.tsbuildinfo
 
-# Vite Cache & Logs
+# Vite & Svelte Cache & Logs
 .vite/
+.svelte-kit/
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
@@ -27,9 +30,16 @@ pnpm-debug.log*
 target/
 src-tauri/target/
 src-tauri/gen/
+src-tauri/WixTools/
 **/*.rs.bk
 *.pdb
 *.dmp
+
+# Security, Signing Keys & Certificates
+*.pem
+*.pfx
+*.p12
+*.key
 
 # IDE & Editor Configuration
 .vscode/*
@@ -50,3 +60,4 @@ Thumbs.db
 .DS_Store
 ehthumbs.db
 ehthumbs_vista.db
+$RECYCLE.BIN/
