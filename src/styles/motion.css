@@ -1,0 +1,20 @@
+:root {
+  /* Timing Durations */
+  --motion-micro: 120ms;
+  --motion-shell: 220ms;
+  --motion-context: 180ms;
+  --motion-mascot: 350ms;
+
+  /* Easing Curves */
+  --ease-natural: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-in-out: cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --motion-micro: 0ms;
+    --motion-shell: 0ms;
+    --motion-context: 0ms;
+    --motion-mascot: 0ms;
+  }
+}

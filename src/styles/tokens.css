@@ -1,0 +1,46 @@
+:root {
+  /* Surfaces */
+  --surface-root: rgba(12, 12, 13, 0.96);
+  --surface-raised: rgba(27, 27, 29, 0.96);
+  --surface-hover: rgba(255, 255, 255, 0.07);
+  --surface-active: rgba(255, 255, 255, 0.12);
+
+  /* Typography Colors */
+  --text-primary: rgba(255, 255, 255, 0.96);
+  --text-secondary: rgba(255, 255, 255, 0.64);
+  --text-tertiary: rgba(255, 255, 255, 0.42);
+
+  /* Borders & Shadows */
+  --border-subtle: rgba(255, 255, 255, 0.08);
+  --border-strong: rgba(255, 255, 255, 0.16);
+  --shadow-soft: 0 8px 24px rgba(0, 0, 0, 0.30);
+
+  /* Accent (Restrained Windows Slate Blue) */
+  --accent-primary: #3b82f6;
+  --accent-muted: rgba(59, 130, 246, 0.15);
+  --accent-focus: rgba(59, 130, 246, 0.40);
+
+  /* Radius System */
+  --radius-shell: 18px;
+  --radius-control: 8px;
+  --radius-pill: 9999px;
+
+  /* Spacing Scale (4, 6, 8, 12, 16, 20, 24) */
+  --space-4: 4px;
+  --space-6: 6px;
+  --space-8: 8px;
+  --space-12: 12px;
+  --space-16: 16px;
+  --space-20: 20px;
+  --space-24: 24px;
+
+  /* Typography Scale */
+  --font-family: "Segoe UI Variable", "Segoe UI", Inter, system-ui, -apple-system, sans-serif;
+  --font-size-tiny: 10px;
+  --font-size-meta: 11px;
+  --font-size-label: 12px;
+  --font-size-body: 13px;
+  --font-size-title: 14px;
+  --line-height-tight: 1.2;
+  --line-height-normal: 1.4;
+}

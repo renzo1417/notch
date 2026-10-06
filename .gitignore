@@ -1,0 +1,27 @@
+# Node & Build Outputs
+node_modules/
+dist/
+dist-ssr/
+*.local
+.env
+.env.*
+!.env.example
+
+# Tauri 2 & Rust
+src-tauri/target/
+src-tauri/gen/
+
+# IDE & Editor files
+.vscode/*
+!.vscode/extensions.json
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# OS Generated
+Thumbs.db
+[Dd]esktop.ini
+.DS_Store
