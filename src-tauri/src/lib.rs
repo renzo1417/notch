@@ -19,13 +19,20 @@ pub fn run() {
             commands::shell::set_always_on_top,
             commands::shell::reposition_notch,
             commands::shell::list_monitors,
+            commands::media::get_media_state,
+            commands::media::media_toggle_play_pause,
+            commands::media::media_previous,
+            commands::media::media_next,
         ])
         .setup(|app| {
             let handle = app.handle();
             let _ = window::setup_notch_window(handle);
             let _ = tray::setup_tray(handle);
+            let media_mgr = app.state::<AppState>().media_manager.clone();
+            media_mgr.init(handle.clone());
             Ok(())
         })
+
         .on_window_event(|window, event| match event {
             // Hiding on close prevents accidental app termination; only explicit Quit terminates
             tauri::WindowEvent::CloseRequested { api, .. } => {

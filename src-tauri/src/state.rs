@@ -1,5 +1,6 @@
 use serde::{Deserialize, Serialize};
-use std::sync::Mutex;
+use std::sync::{Arc, Mutex};
+use crate::integrations::media::MediaManager;
 
 /// Runtime configuration for the notch shell window.
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -23,6 +24,7 @@ impl Default for ShellConfig {
 pub struct AppState {
     pub is_ready: Mutex<bool>,
     pub shell_config: Mutex<ShellConfig>,
+    pub media_manager: Arc<MediaManager>,
 }
 
 impl Default for AppState {
@@ -30,6 +32,8 @@ impl Default for AppState {
         Self {
             is_ready: Mutex::new(true),
             shell_config: Mutex::new(ShellConfig::default()),
+            media_manager: Arc::new(MediaManager::new()),
         }
     }
 }
+

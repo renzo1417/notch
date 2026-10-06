@@ -34,12 +34,19 @@ src-tauri/WixTools/
 **/*.rs.bk
 *.pdb
 *.dmp
+*.exe
+*.msi
+*.wixobj
+*.wixpdb
 
 # Security, Signing Keys & Certificates
 *.pem
 *.pfx
 *.p12
 *.key
+*.crt
+*.cer
+
 
 # IDE & Editor Configuration
 .vscode/*

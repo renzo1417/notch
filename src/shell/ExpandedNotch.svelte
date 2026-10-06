@@ -1,7 +1,8 @@
 <script lang="ts">
   import MascotCanvas from "../mascot/MascotCanvas.svelte";
-  import MusicPlaceholder from "../modules/music/MusicPlaceholder.svelte";
+  import MusicModule from "../modules/music/MusicModule.svelte";
   import type { MascotState } from "../mascot/types";
+
 
   interface Props {
     backendConnected: boolean;
@@ -46,10 +47,11 @@
     </div>
   </div>
 
-  <!-- RIGHT ZONE: Media Module Placeholder -->
+  <!-- RIGHT ZONE: Media Module -->
   <div class="zone right-zone" aria-label="Music player zone">
-    <MusicPlaceholder />
+    <MusicModule />
   </div>
+
 </div>
 
 <style>
