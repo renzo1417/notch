@@ -1,27 +1,52 @@
-# Node & Build Outputs
+# Dependencies & Package Managers
 node_modules/
+.pnp
+.pnp.js
+
+# Production & Build Outputs
 dist/
 dist-ssr/
+build/
+*.tsbuildinfo
+
+# Vite Cache & Logs
+.vite/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+*.log
+
+# Environment Variables & Local Overrides
 *.local
 .env
 .env.*
 !.env.example
 
 # Tauri 2 & Rust
+target/
 src-tauri/target/
 src-tauri/gen/
+**/*.rs.bk
+*.pdb
+*.dmp
 
-# IDE & Editor files
+# IDE & Editor Configuration
 .vscode/*
 !.vscode/extensions.json
+!.vscode/settings.json
 .idea/
 *.suo
 *.ntvs*
 *.njsproj
 *.sln
 *.sw?
+*.sublime-project
+*.sublime-workspace
 
 # OS Generated
 Thumbs.db
 [Dd]esktop.ini
 .DS_Store
+ehthumbs.db
+ehthumbs_vista.db

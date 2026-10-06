@@ -1,23 +1,66 @@
 use tauri::{
-    menu::{Menu, MenuItem},
-    tray::TrayIconBuilder,
+    menu::{Menu, MenuItem, PredefinedMenuItem},
+    tray::{MouseButton, MouseButtonState, TrayIconBuilder, TrayIconEvent},
     AppHandle, Manager,
 };
 
-/// Sets up the system tray icon and menu actions.
+/// Sets up the system tray icon and menu actions per Phase 1 requirements:
+/// - Show Notch
+/// - Hide Notch
+/// - Settings placeholder
+/// - Quit
 pub fn setup_tray(app: &AppHandle) -> Result<(), Box<dyn std::error::Error>> {
+    let show_item = MenuItem::with_id(app, "show", "Show Notch", true, None::<&str>)?;
+    let hide_item = MenuItem::with_id(app, "hide", "Hide Notch", true, None::<&str>)?;
+    let settings_item = MenuItem::with_id(
+        app,
+        "settings",
+        "Settings (Placeholder)",
+        false,
+        None::<&str>,
+    )?;
+    let separator = PredefinedMenuItem::separator(app)?;
     let quit_item = MenuItem::with_id(app, "quit", "Quit", true, None::<&str>)?;
-    let show_hide_item = MenuItem::with_id(app, "toggle", "Toggle Notch", true, None::<&str>)?;
-    let menu = Menu::with_items(app, &[&show_hide_item, &quit_item])?;
+
+    let menu = Menu::with_items(
+        app,
+        &[&show_item, &hide_item, &settings_item, &separator, &quit_item],
+    )?;
 
     let _tray = TrayIconBuilder::new()
         .menu(&menu)
         .show_menu_on_left_click(false)
+        .tooltip("Project Notch")
         .on_menu_event(|app, event| match event.id.as_ref() {
+            "show" => {
+                if let Some(window) = app.get_webview_window("main") {
+                    let _ = window.show();
+                    let _ = window.set_focus();
+                }
+            }
+            "hide" => {
+                // Hiding must not quit the process
+                if let Some(window) = app.get_webview_window("main") {
+                    let _ = window.hide();
+                }
+            }
+            "settings" => {
+                // Settings placeholder for Phase 9
+            }
             "quit" => {
+                // Clean process termination
                 app.exit(0);
             }
-            "toggle" => {
+            _ => {}
+        })
+        .on_tray_icon_event(|tray, event| {
+            if let TrayIconEvent::Click {
+                button: MouseButton::Left,
+                button_state: MouseButtonState::Up,
+                ..
+            } = event
+            {
+                let app = tray.app_handle();
                 if let Some(window) = app.get_webview_window("main") {
                     if let Ok(is_visible) = window.is_visible() {
                         if is_visible {
@@ -29,7 +72,6 @@ pub fn setup_tray(app: &AppHandle) -> Result<(), Box<dyn std::error::Error>> {
                     }
                 }
             }
-            _ => {}
         })
         .build(app)?;
 

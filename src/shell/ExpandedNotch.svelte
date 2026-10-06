@@ -1,66 +1,76 @@
 <script lang="ts">
   interface Props {
-    backendDetails?: string;
+    backendConnected: boolean;
   }
 
-  let { backendDetails = "Ready" }: Props = $props();
+  let { backendConnected }: Props = $props();
 </script>
 
-<div class="expanded-placeholder" role="region" aria-label="Expanded Notch Placeholder">
-  <div class="zone zone-left">
-    <span class="zone-label">Mascot</span>
-  </div>
-  <div class="zone zone-center">
-    <span class="zone-label">Context Surface</span>
-    <span class="zone-sub">{backendDetails}</span>
-  </div>
-  <div class="zone zone-right">
-    <span class="zone-label">Music</span>
+<div class="expanded-layout" aria-label="Expanded Notch Shell">
+  <div class="center-content">
+    <div class="header-row">
+      <div 
+        class="status-dot" 
+        class:connected={backendConnected} 
+        aria-hidden="true"
+        title={backendConnected ? "Backend connected" : "Connecting..."}
+      ></div>
+      <span class="center-label">PROJECT_NOTCH · Expanded</span>
+    </div>
+    <span class="sub-label">Top-center layout verification · Click to collapse</span>
   </div>
 </div>
 
 <style>
-  .expanded-placeholder {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    width: 100%;
-    height: 100%;
-    padding: var(--space-8) var(--space-12);
-    gap: var(--space-12);
-  }
-
-  .zone {
+  .expanded-layout {
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    border: 1px dashed var(--border-subtle);
-    border-radius: var(--radius-control);
-    padding: var(--space-6) var(--space-12);
-    background-color: var(--surface-hover);
+    width: 100%;
+    height: 100%;
+    padding: 0 var(--space-16);
+    user-select: none;
   }
 
-  .zone-left {
-    flex: 1;
+  .center-content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-4);
   }
 
-  .zone-center {
-    flex: 2;
+  .header-row {
+    display: flex;
+    align-items: center;
+    gap: var(--space-8);
   }
 
-  .zone-right {
-    flex: 1.5;
+  .status-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background-color: var(--text-tertiary);
+    transition: background-color var(--motion-micro) var(--ease-natural);
+    flex-shrink: 0;
   }
 
-  .zone-label {
-    font-size: var(--font-size-label);
-    font-weight: 500;
+  .status-dot.connected {
+    background-color: #22c55e;
+  }
+
+  .center-label {
+    font-size: var(--font-size-body);
+    font-weight: 600;
+    letter-spacing: 0.3px;
+    color: var(--text-primary);
+    white-space: nowrap;
+  }
+
+  .sub-label {
+    font-size: var(--font-size-meta);
     color: var(--text-secondary);
-  }
-
-  .zone-sub {
-    font-size: var(--font-size-tiny);
-    color: var(--text-tertiary);
+    white-space: nowrap;
   }
 </style>

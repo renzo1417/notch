@@ -154,3 +154,47 @@ The center zone relies on a deterministic priority hierarchy (`P0` through `P6`)
 - **100% Local-First:** No network requests, telemetry, accounts, or analytics.
 - **Process Isolation:** The launcher module only accepts split executable paths and arguments—it never passes raw command strings to a system shell (`cmd.exe` / `powershell`).
 - **Clipboard Persistence:** OFF by default.
+
+---
+
+## 4. Phase 1 — Native Notch Shell Lifecycle & Positioning Architecture
+
+### 4.1 Transparent Borderless Window Model
+- **Borderless & Transparent:** Configured with `decorations: false`, `transparent: true`, and `shadow: false` in `tauri.conf.json`. Disabling native window shadow ensures the Windows DWM does not cast a rectangular drop-shadow box around transparent Webview2 content.
+- **Taskbar Isolation:** `skipTaskbar: true` prevents the notch from displaying a standard taskbar entry.
+- **Configurable Always-On-Top:** Window maintains topmost Z-order via native `window.set_always_on_top`, backed by thread-safe `AppState` configuration and frontend IPC commands.
+
+### 4.2 Top-Center Multi-Monitor & DPI Positioning Mathematics
+The shell window positioning is computed natively in Rust physical coordinates to prevent rounding drift across arbitrary Windows DPI scaling factors (100%, 125%, 150%, 175%, 200%):
+
+$$\text{physical\_width} = \text{round}(\text{logical\_width} \times \text{scale\_factor})$$
+$$\text{center\_x}_{\text{phys}} = \text{monitor\_pos}.x + \left\lfloor\frac{\text{monitor\_size}.\text{width} - \text{physical\_width}}{2}\right\rfloor$$
+$$\text{top\_y}_{\text{phys}} = \text{monitor\_pos}.y$$
+
+- **Multi-Monitor Coordinate Offsets:** By adding `monitor_pos.x` and anchoring to `monitor_pos.y`, the window centers correctly regardless of monitor arrangement, resolution differences, or negative coordinates.
+- **Monitor Selection Strategy:** Supports explicit target monitor resolution with fallback chain: requested monitor $\rightarrow$ current monitor $\rightarrow$ primary monitor $\rightarrow$ first available monitor.
+
+### 4.3 Hit-Region & Window Bounds Management (Anti-Top-Strip Invariant)
+To prevent blocking underlying Windows applications (such as browser tabs and titlebars), Project Notch strictly enforces the **minimal hit-region invariant**:
+1. **No Top-Strip Window:** The window never spans 100% display width.
+2. **State-Synchronized Window Geometry:**
+   - **Compact Resting Bounds:** Logical $332 \times 50\,\text{px}$ wrapping the $300 \times 38\,\text{px}$ pill with $16\,\text{px}$ lateral margins to accommodate the soft ambient drop-shadow (`--shadow-soft`) without hard clipping.
+   - **Expanded Resting Bounds:** Logical $552 \times 88\,\text{px}$ wrapping the $520 \times 76\,\text{px}$ expanded surface.
+3. **Coordinated Asymmetric Resize Sequence:**
+   - **Expansion:** The native window expands immediately to $552 \times 88\,\text{px}$ and recenters, followed by Svelte CSS transition (`220ms` natural easing curve) expanding the shell element.
+   - **Collapse:** Svelte initiates the CSS collapse transition (`220ms`). Once the animation completes, the native window shrinks back to $332 \times 50\,\text{px}$ and recenters.
+   - **Benefit:** GPU-accelerated 60/120fps CSS animations inside stable OS bounds during motion, with minimal OS hit-testing area at resting states.
+
+### 4.4 Display Change & Re-evaluation
+- Native `WindowEvent::ScaleFactorChanged` events automatically recalculate physical dimensions and reposition the window flush to the top-center edge of the active monitor.
+- IPC command `reposition_notch` allows on-demand recalibration after display reconfiguration.
+
+### 4.5 System Tray Lifecycle & Clean Termination
+- **Tray Menu Actions:**
+  - `Show Notch`: Restores visibility and sets window focus.
+  - `Hide Notch`: Hides the window without terminating the background process.
+  - `Settings (Placeholder)`: Disabled menu placeholder reserved for Phase 9 settings.
+  - `Quit`: Issues `app.exit(0)` for clean process shutdown.
+- **Close Interception:** Standard `WindowEvent::CloseRequested` is intercepted via `api.prevent_close()` and redirects to `window.hide()`, guaranteeing the notch remains alive in the tray until explicit user termination.
+- **Tray Icon Click:** Left-clicking the system tray icon toggles notch visibility.
+

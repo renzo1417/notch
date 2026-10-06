@@ -13,13 +13,15 @@ export type NotchShellState =
 export interface ShellDimensions {
   width: number;
   height: number;
+  windowWidth: number;
+  windowHeight: number;
 }
 
 export const SHELL_STATE_DIMENSIONS: Record<NotchShellState, ShellDimensions> = {
-  dormant: { width: 140, height: 28 },
-  compact: { width: 280, height: 36 },
-  peek: { width: 340, height: 44 },
-  expanded: { width: 520, height: 72 },
-  panel: { width: 560, height: 160 },
-  settings: { width: 560, height: 280 },
+  dormant: { width: 140, height: 28, windowWidth: 172, windowHeight: 40 },
+  compact: { width: 300, height: 38, windowWidth: 332, windowHeight: 50 },
+  peek: { width: 340, height: 44, windowWidth: 372, windowHeight: 56 },
+  expanded: { width: 520, height: 76, windowWidth: 552, windowHeight: 88 },
+  panel: { width: 560, height: 160, windowWidth: 592, windowHeight: 172 },
+  settings: { width: 560, height: 280, windowWidth: 592, windowHeight: 292 },
 };
