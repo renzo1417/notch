@@ -1,8 +1,10 @@
 <script lang="ts">
-  import { onMount } from "svelte";
+  import { onMount, onDestroy } from "svelte";
   import MascotCanvas from "../mascot/MascotCanvas.svelte";
   import IconMusic from "../icons/IconMusic.svelte";
   import { mediaStore } from "../modules/music/media-store.svelte";
+  import { codingStore } from "../modules/coding/coding-store.svelte";
+  import { contextEngine, type ContextCandidate } from "../app/state/context-engine";
 
   interface Props {
     backendConnected: boolean;
@@ -10,8 +12,21 @@
 
   let { backendConnected }: Props = $props();
 
+  let activeCandidate = $state<ContextCandidate>(contextEngine.current);
+  let unsubContext: (() => void) | null = null;
+
   onMount(() => {
     mediaStore.init();
+    codingStore.init();
+    unsubContext = contextEngine.subscribe((cand) => {
+      activeCandidate = cand;
+    });
+  });
+
+  onDestroy(() => {
+    if (unsubContext) {
+      unsubContext();
+    }
   });
 
   const media = $derived(mediaStore.state);
@@ -23,9 +38,24 @@
       ? `Paused: ${media.title}`
       : "No audio playing"
   );
+
+  const codingSession = $derived(codingStore.state);
+  const compactCodingLabel = $derived(
+    codingSession.appName
+      ? `${codingSession.appName}${codingSession.projectLabel ? ` · ${codingSession.projectLabel}` : ""}${codingSession.elapsedMinutes > 0 ? ` · ${codingSession.elapsedMinutes}m` : ""}`
+      : "Coding"
+  );
+
+  const compactLabel = $derived(
+    activeCandidate.mode === "coding"
+      ? compactCodingLabel
+      : activeCandidate.mode === "notification"
+      ? (typeof activeCandidate.data === "string" ? activeCandidate.data : "Notification")
+      : "Windows Notch"
+  );
 </script>
 
-<div class="compact-layout" aria-label="Compact Notch Shell: Windows Notch Active">
+<div class="compact-layout" aria-label="Compact Notch Shell: {compactLabel}">
   <!-- Left: Mini companion avatar -->
   <div class="compact-mascot" aria-hidden="true">
     <MascotCanvas size={26} compact={true} interactive={false} />
@@ -36,10 +66,11 @@
     <div
       class="status-dot"
       class:connected={backendConnected}
+      class:coding={activeCandidate.mode === "coding"}
       aria-hidden="true"
-      title={backendConnected ? "Native backend connected" : "Connecting to backend..."}
+      title={activeCandidate.mode === "coding" ? `Coding: ${compactCodingLabel}` : backendConnected ? "Native backend connected" : "Connecting to backend..."}
     ></div>
-    <span class="center-label">Windows Notch</span>
+    <span class="center-label" title={compactLabel}>{compactLabel}</span>
   </div>
 
   <!-- Right: Subdued media indicator -->
@@ -103,6 +134,10 @@
 
   .status-dot.connected {
     background-color: #22c55e;
+  }
+
+  .status-dot.coding {
+    background-color: #38bdf8;
   }
 
   .center-label {

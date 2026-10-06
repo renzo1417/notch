@@ -23,6 +23,9 @@ pub fn run() {
             commands::media::media_toggle_play_pause,
             commands::media::media_previous,
             commands::media::media_next,
+            commands::coding::get_coding_session,
+            commands::coding::set_coding_project_label,
+            commands::coding::reset_coding_session,
         ])
         .setup(|app| {
             let handle = app.handle();
@@ -30,6 +33,8 @@ pub fn run() {
             let _ = tray::setup_tray(handle);
             let media_mgr = app.state::<AppState>().media_manager.clone();
             media_mgr.init(handle.clone());
+            let fg_mgr = app.state::<AppState>().foreground_manager.clone();
+            fg_mgr.init(handle.clone());
             Ok(())
         })
 

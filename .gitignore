@@ -35,6 +35,9 @@ src-tauri/WixTools/
 *.pdb
 *.dmp
 *.exe
+*.dll
+*.so
+*.dylib
 *.msi
 *.wixobj
 *.wixpdb

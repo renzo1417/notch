@@ -1,8 +1,10 @@
 <script lang="ts">
+  import { onMount, onDestroy } from "svelte";
   import MascotCanvas from "../mascot/MascotCanvas.svelte";
   import MusicModule from "../modules/music/MusicModule.svelte";
+  import CodingContextView from "../modules/coding/CodingContextView.svelte";
+  import { contextEngine, type ContextCandidate } from "../app/state/context-engine";
   import type { MascotState } from "../mascot/types";
-
 
   interface Props {
     backendConnected: boolean;
@@ -11,13 +13,27 @@
   let { backendConnected }: Props = $props();
 
   let mascotState = $state<MascotState>("idle");
+  let activeCandidate = $state<ContextCandidate>(contextEngine.current);
+  let unsubContext: (() => void) | null = null;
 
   function handleMascotStateChange(newState: MascotState) {
     mascotState = newState;
   }
+
+  onMount(() => {
+    unsubContext = contextEngine.subscribe((cand) => {
+      activeCandidate = cand;
+    });
+  });
+
+  onDestroy(() => {
+    if (unsubContext) {
+      unsubContext();
+    }
+  });
 </script>
 
-<div class="expanded-three-zone" aria-label="Expanded Notch View · Companion state: {mascotState}">
+<div class="expanded-three-zone" aria-label="Expanded Notch View · Context: {activeCandidate.mode} · Companion state: {mascotState}">
   <!-- LEFT ZONE: Procedural Mascot (Pip) -->
   <div class="zone left-zone" aria-label="Companion zone">
     <MascotCanvas
@@ -29,25 +45,30 @@
   </div>
 
   <!-- CENTER ZONE: Context Surface -->
-  <div class="zone center-zone" aria-label="Context surface">
-    <div class="context-container">
-      <div class="context-header">
-        <span class="context-category">DESKTOP COMPANION · {mascotState.toUpperCase()}</span>
-        <div
-          class="status-dot"
-          class:connected={backendConnected}
-          title={backendConnected ? "Native backend connected" : "Connecting to backend..."}
-          aria-hidden="true"
-        ></div>
+  <div class="zone center-zone" aria-label="Context surface: {activeCandidate.mode}">
+    {#if activeCandidate.mode === "coding"}
+      <CodingContextView />
+    {:else}
+      <!-- Default Idle Surface -->
+      <div class="context-container">
+        <div class="context-header">
+          <span class="context-category">DESKTOP COMPANION · {mascotState.toUpperCase()}</span>
+          <div
+            class="status-dot"
+            class:connected={backendConnected}
+            title={backendConnected ? "Native backend connected" : "Connecting to backend..."}
+            aria-hidden="true"
+          ></div>
+        </div>
+        <div class="context-body">
+          <span class="context-title" title="Windows Notch Active">Windows Notch Active</span>
+          <span class="context-meta" title="Quiet desktop companion layer">Quiet top-center companion layer</span>
+        </div>
       </div>
-      <div class="context-body">
-        <span class="context-title" title="Windows Notch Active">Windows Notch Active</span>
-        <span class="context-meta" title="Quiet desktop companion layer">Quiet top-center companion layer</span>
-      </div>
-    </div>
+    {/if}
   </div>
 
-  <!-- RIGHT ZONE: Media Module -->
+  <!-- RIGHT ZONE: Media Module (Anchored ~176px fixed geometry) -->
   <div class="zone right-zone" aria-label="Music player zone">
     <MusicModule />
   </div>
