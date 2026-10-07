@@ -1,13 +1,13 @@
 use tauri::{
     menu::{Menu, MenuItem, PredefinedMenuItem},
     tray::{MouseButton, MouseButtonState, TrayIconBuilder, TrayIconEvent},
-    AppHandle, Manager,
+    AppHandle, Emitter, Manager,
 };
 
-/// Sets up the system tray icon and menu actions per Phase 1 requirements:
+/// Sets up the system tray icon and menu actions per Phase 9 requirements:
 /// - Show Notch
 /// - Hide Notch
-/// - Settings placeholder
+/// - Settings
 /// - Quit
 pub fn setup_tray(app: &AppHandle) -> Result<(), Box<dyn std::error::Error>> {
     let show_item = MenuItem::with_id(app, "show", "Show Notch", true, None::<&str>)?;
@@ -15,8 +15,8 @@ pub fn setup_tray(app: &AppHandle) -> Result<(), Box<dyn std::error::Error>> {
     let settings_item = MenuItem::with_id(
         app,
         "settings",
-        "Settings (Placeholder)",
-        false,
+        "Settings",
+        true,
         None::<&str>,
     )?;
     let separator = PredefinedMenuItem::separator(app)?;
@@ -45,7 +45,11 @@ pub fn setup_tray(app: &AppHandle) -> Result<(), Box<dyn std::error::Error>> {
                 }
             }
             "settings" => {
-                // Settings placeholder for Phase 9
+                if let Some(window) = app.get_webview_window("main") {
+                    let _ = window.show();
+                    let _ = window.set_focus();
+                    let _ = window.emit("open-settings", ());
+                }
             }
             "quit" => {
                 // Clean process termination

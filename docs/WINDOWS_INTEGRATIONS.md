@@ -27,7 +27,7 @@ All operating system interactions in `PROJECT_NOTCH` are managed through isolate
 | **Clipboard** | Win32 `AddClipboardFormatListener` & `WM_CLIPBOARDUPDATE` | Event-driven text clipboard change notifications, consecutive deduplication, volatile memory privacy | **Implemented (Phase 7)** in `src-tauri/src/integrations/clipboard.rs` |
 | **Downloads Watcher** | Win32 `ReadDirectoryChangesW` + `IFileOpenDialog` (`FOS_PICKFOLDERS`) | Watched folder download awareness, partial download heuristics, event deduplication, clean watcher cleanup | **Implemented (Phase 8)** in `src-tauri/src/integrations/downloads.rs` |
 | **App Launcher** | `std::process::Command` + Win32 `IFileOpenDialog`, `IShellLinkW`, `SHGetFileInfoW` | Safe application selection, shortcut target resolution, native icon extraction, and direct process launching without shell interpretation | **Implemented (Phase 6)** in `src-tauri/src/integrations/launcher.rs` |
-| **Startup** | Windows Registry `HKCU\Software\Microsoft\Windows\CurrentVersion\Run` | Optional launch-at-login setting | Typed placeholder model in `integrations/startup.rs` |
+| **Startup** | Windows Registry `HKCU\Software\Microsoft\Windows\CurrentVersion\Run` | Optional launch-at-login setting, native registry read/write, safe error recovery | **Implemented (Phase 9)** in `src-tauri/src/integrations/startup.rs` |
 
 ---
 
@@ -175,5 +175,21 @@ All operating system interactions in `PROJECT_NOTCH` are managed through isolate
   2. *Direct Writes without Temporary Suffixes:* Some tools or browsers (e.g. "Save Image As...") write directly to the final filename without a `.crdownload` or `.part` extension.
   3. *Unwatched Directories:* Files saved outside of user-configured watched folders cannot be detected.
   4. *Cloud Storage Virtual Files:* Cloud sync providers (OneDrive, Dropbox) may emit hydration events that look like write activity when downloading files on demand.
+
+---
+
+### 3.7 Windows Startup & Settings Persistence — Phase 9 Implementation
+- **Registry Key:** `HKCU\Software\Microsoft\Windows\CurrentVersion\Run` with value name `ProjectNotch`.
+- **API Mechanism:** Native Win32 Registry APIs (`RegOpenKeyExW`, `RegQueryValueExW`, `RegSetValueExW`, `RegDeleteValueW`, `RegCloseKey`) via Microsoft `windows` v0.60 crate with `Win32_System_Registry`.
+- **Executable Quoting:** Properly quotes executable paths containing spaces (e.g. `"\"C:\Path With Spaces\project-notch.exe\""`).
+- **Settings Persistence & Version Migration:**
+  - Persisted locally to `%APPDATA%\project-notch\settings.json`.
+  - Typed configuration schema (`schemaVersion: 1`).
+  - Automatic migration strategy for legacy/unversioned payloads.
+  - Safe error recovery: corrupted files automatically backed up to `settings.corrupted.bak` with graceful fallback to defaults without crashing.
+  - Live runtime application without restart where practical (accent color, always-on-top, monitor placement, auto-collapse delay, mascot toggle, clipboard listener, performance mode).
+- **Platform Limitations:**
+  - In development builds (`cargo run`), `current_exe()` resolves to the target debug binary rather than an installed release shortcut.
+  - If user group policies restrict registry writes to `HKCU\...\Run`, error is reported to user notification rather than crashing.
 
 

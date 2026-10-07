@@ -3,7 +3,8 @@
   import { MascotRenderer } from "./renderer";
   import { MascotStateMachine } from "./state-machine";
   import { mascotStore } from "./mascot-store.svelte";
-  import type { MascotConfig, MascotState } from "./types";
+  import { settingsStore } from "../settings/settings-store.svelte";
+  import type { MascotState } from "./types";
 
   interface Props {
     size?: number;
@@ -30,11 +31,21 @@
   let isHovered: boolean = $state(false);
   let unsubMascot: (() => void) | null = null;
 
-  const config: MascotConfig = {
-    enabled: true,
-    trackCursor: true,
-    animationIntensity: 1.0,
-  };
+  const mascotConfig = $derived(settingsStore.state.mascot);
+  const perfConfig = $derived(settingsStore.state.performance);
+  const appearanceConfig = $derived(settingsStore.state.appearance);
+
+  $effect(() => {
+    if (stateMachine) {
+      const reduced = appearanceConfig.reducedMotion || perfConfig.batterySaverMode;
+      const intensity = reduced ? 0 : mascotConfig.animationIntensity;
+      stateMachine.setConfig({
+        enabled: mascotConfig.enabled,
+        trackCursor: mascotConfig.cursorTracking,
+        animationIntensity: intensity,
+      });
+    }
+  });
 
   function updateAriaState(newState: MascotState) {
     currentStateName = newState;
@@ -80,7 +91,7 @@
   }
 
   function handlePointerMove(event: MouseEvent) {
-    if (!interactive || !stateMachine || !canvasElement) return;
+    if (!interactive || !stateMachine || !canvasElement || !mascotConfig.cursorTracking) return;
 
     const rect = canvasElement.getBoundingClientRect();
     const centerX = rect.left + rect.width / 2;
@@ -138,7 +149,11 @@
 
   onMount(() => {
     renderer = new MascotRenderer();
-    stateMachine = new MascotStateMachine(config, updateAriaState);
+    stateMachine = new MascotStateMachine({
+      enabled: mascotConfig.enabled,
+      trackCursor: mascotConfig.cursorTracking,
+      animationIntensity: mascotConfig.animationIntensity,
+    }, updateAriaState);
 
     unsubMascot = mascotStore.subscribe((state, durationMs) => {
       stateMachine?.setState(state, durationMs);
@@ -171,26 +186,32 @@
   }
 </script>
 
-{#if interactive}
-  <button
-    type="button"
-    class="mascot-container"
-    class:hovered={isHovered}
-    aria-label="Desktop companion Pip. State: {currentStateName}. Click to interact."
-    title="Pip · {currentStateName}"
-    onclick={handleClick}
-    onkeydown={handleKeyDown}
-    onmouseleave={handlePointerLeave}
-  >
-    <canvas bind:this={canvasElement} class="mascot-canvas"></canvas>
-  </button>
+{#if mascotConfig.enabled}
+  {#if interactive}
+    <button
+      type="button"
+      class="mascot-container"
+      class:hovered={isHovered}
+      aria-label="Desktop companion Pip. State: {currentStateName}. Click to interact."
+      title="Pip · {currentStateName}"
+      onclick={handleClick}
+      onkeydown={handleKeyDown}
+      onmouseleave={handlePointerLeave}
+    >
+      <canvas bind:this={canvasElement} class="mascot-canvas"></canvas>
+    </button>
+  {:else}
+    <div
+      class="mascot-container compact"
+      role="img"
+      aria-label="Desktop companion Pip mini avatar"
+    >
+      <canvas bind:this={canvasElement} class="mascot-canvas"></canvas>
+    </div>
+  {/if}
 {:else}
-  <div
-    class="mascot-container compact"
-    role="img"
-    aria-label="Desktop companion Pip mini avatar"
-  >
-    <canvas bind:this={canvasElement} class="mascot-canvas"></canvas>
+  <div class="mascot-container disabled" aria-label="Companion mascot disabled">
+    <div class="mascot-disabled-indicator" title="Mascot disabled in Settings"></div>
   </div>
 {/if}
 
@@ -214,6 +235,18 @@
 
   .mascot-container.compact {
     cursor: default;
+  }
+
+  .mascot-container.disabled {
+    cursor: default;
+    opacity: 0.5;
+  }
+
+  .mascot-disabled-indicator {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background-color: var(--text-tertiary);
   }
 
   .mascot-canvas {

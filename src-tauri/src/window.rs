@@ -7,6 +7,9 @@ pub const COMPACT_WINDOW_HEIGHT: f64 = 50.0;
 pub const EXPANDED_WINDOW_WIDTH: f64 = 552.0;
 pub const EXPANDED_WINDOW_HEIGHT: f64 = 88.0;
 
+pub const SETTINGS_WINDOW_WIDTH: f64 = 560.0;
+pub const SETTINGS_WINDOW_HEIGHT: f64 = 390.0;
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct MonitorInfo {
     pub name: Option<String>,
@@ -20,6 +23,7 @@ pub struct MonitorInfo {
 pub fn get_dimensions_for_state(state: &str) -> (f64, f64) {
     match state {
         "expanded" => (EXPANDED_WINDOW_WIDTH, EXPANDED_WINDOW_HEIGHT),
+        "settings" => (SETTINGS_WINDOW_WIDTH, SETTINGS_WINDOW_HEIGHT),
         _ => (COMPACT_WINDOW_WIDTH, COMPACT_WINDOW_HEIGHT),
     }
 }

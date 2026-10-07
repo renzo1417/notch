@@ -1,6 +1,6 @@
 # PROJECT_NOTCH — System Architecture
 
-**Status:** Phase 0 Technical Foundation  
+**Status:** Phase 9 Settings, Configuration, and Diagnostics Complete  
 **Reference Document:** [PRODUCT_SPEC.md](../PRODUCT_SPEC.md)
 
 ---
@@ -16,9 +16,10 @@
 │  ┌─────────────────┐   ┌────────────────────────┐   ┌────────────────┐  │
 │  │   LEFT: MASCOT   │   │  CENTER: CONTEXT ZONE  │   │  RIGHT: MUSIC  │  │
 │  │  (State Machine) │   │ (Deterministic Engine) │   │ (Media Status) │  │
-│  └─────────────────┘   └────────────────────────┘   └────────────────┘  │
+│  │  └─────────────────┘   └────────────────────────┘   └────────────────┘  │
 │                                                                         │
 │  Shell States: dormant | compact | peek | expanded | panel | settings   │
+│  Settings Panel: 9 compact daily-use sections (Fluent desktop design)   │
 │  CSS Tokens & Motion: Scoped CSS + CSS Custom Properties                │
 └────────────────────────────────────┬────────────────────────────────────┘
                                      │ Tauri IPC (Commands & Events)
@@ -35,6 +36,7 @@
 │  - Media Session (GSMTC)        - Power / Battery Status                │
 │  - Clipboard Listener (Win32)   - Foreground Process Detection          │
 │  - Watched Download Watcher     - Validated App Launcher                │
+│  - Startup Registry (Run Key)   - SettingsManager (Safe Recovery & v1)  │
 └─────────────────────────────────────────────────────────────────────────┘
 ```
 
@@ -59,18 +61,25 @@ WindowsNotch/
 │  │  ├─ ExpandedNotch.svelte   # 3-zone expanded surface
 │  │  └─ shell-motion.ts        # Timing & curve constants
 │  ├─ mascot/
+│  │  ├─ MascotCanvas.svelte    # Interactive procedural companion renderer
+│  │  ├─ renderer.ts            # Procedural Canvas 2D graphics
+│  │  ├─ state-machine.ts       # Emotional state transition engine
 │  │  └─ types.ts               # Mascot state & config types
 │  ├─ modules/                  # Feature domain modules
-│  │  ├─ music/types.ts         # Media state types
-│  │  ├─ coding/types.ts        # Coding context types
-│  │  ├─ timer/types.ts         # Focus timer types
-│  │  ├─ downloads/types.ts     # Downloads awareness types
-│  │  ├─ clipboard/types.ts     # Clipboard history types
-│  │  ├─ battery/types.ts       # Battery state types
-│  │  ├─ notifications/types.ts # Internal notification types
-│  │  └─ launcher/types.ts      # App launcher types
+│  │  ├─ music/                 # GSMTC media module
+│  │  ├─ coding/                # Active editor detection
+│  │  ├─ timer/                 # Built-in focus countdown timer
+│  │  ├─ downloads/             # Watched folder downloads awareness
+│  │  ├─ clipboard/             # Event-driven clipboard history
+│  │  ├─ battery/               # Native Windows battery & power status
+│  │  ├─ notifications/         # Internal event notifications
+│  │  └─ launcher/              # Validated application launcher & dock
 │  ├─ settings/
-│  │  └─ types.ts               # User configuration types
+│  │  ├─ types.ts               # Configuration schema (v1) & section types
+│  │  ├─ migrations.ts          # Schema version migration & safe error recovery
+│  │  ├─ settings-store.svelte.ts # Reactive settings store & live token updates
+│  │  ├─ SettingsView.svelte    # Compact daily-use settings modal panel
+│  │  └─ sections/              # Modular compact section views (9 sections)
 │  ├─ styles/
 │  │  ├─ tokens.css             # Color, radius, and spacing tokens
 │  │  ├─ motion.css             # Timing, easing curves, and reduced motion
@@ -83,16 +92,25 @@ WindowsNotch/
 │  │  ├─ lib.rs                 # Tauri builder, plugins, and command handlers
 │  │  ├─ commands/              # IPC command handlers
 │  │  │  ├─ mod.rs
-│  │  │  └─ ping.rs             # Bridge health / round-trip verification
+│  │  │  ├─ ping.rs             # Bridge health / round-trip verification
+│  │  │  ├─ shell.rs            # Window state & bounds commands
+│  │  │  ├─ media.rs            # GSMTC transport controls
+│  │  │  ├─ coding.rs           # Coding session labels
+│  │  │  ├─ launcher.rs         # App management & launch
+│  │  │  ├─ clipboard.rs        # Clipboard history commands
+│  │  │  ├─ battery.rs          # Power status commands
+│  │  │  ├─ downloads.rs        # Watched folder commands
+│  │  │  └─ settings.rs         # Settings & autostart IPC commands
 │  │  ├─ integrations/          # Isolated OS adapters
 │  │  │  ├─ mod.rs
-│  │  │  ├─ media.rs            # GSMTC media session placeholder
-│  │  │  ├─ power.rs            # Power status placeholder
-│  │  │  ├─ clipboard.rs        # Clipboard format listener placeholder
-│  │  │  ├─ foreground.rs       # Foreground IDE detection placeholder
-│  │  │  ├─ downloads.rs        # Watched-folder watcher placeholder
-│  │  │  ├─ launcher.rs         # Validated app launcher placeholder
-│  │  │  └─ startup.rs          # Startup registry placeholder
+│  │  │  ├─ media.rs            # GSMTC media session
+│  │  │  ├─ power.rs            # Win32 GetSystemPowerStatus
+│  │  │  ├─ clipboard.rs        # AddClipboardFormatListener
+│  │  │  ├─ foreground.rs       # Win32 SetWinEventHook foreground IDE
+│  │  │  ├─ downloads.rs        # ReadDirectoryChangesW watcher
+│  │  │  ├─ launcher.rs         # Validated app launcher & icon extraction
+│  │  │  ├─ startup.rs          # Windows Run key autostart integration
+│  │  │  └─ settings.rs         # SettingsManager, schema v1, safe recovery
 │  │  ├─ tray.rs                # System tray icon and menu setup
 │  │  ├─ window.rs              # Top-center window placement helper
 │  │  └─ state.rs               # Central backend state container

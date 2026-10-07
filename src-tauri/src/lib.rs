@@ -49,6 +49,11 @@ pub fn run() {
             commands::downloads::pick_download_folder,
             commands::downloads::get_download_state,
             commands::downloads::open_download_folder,
+            commands::settings::get_settings,
+            commands::settings::save_settings,
+            commands::settings::reset_settings,
+            commands::settings::get_autostart_status,
+            commands::settings::set_autostart_status,
         ])
         .setup(|app| {
             let handle = app.handle();
@@ -68,7 +73,11 @@ pub fn run() {
             power_mgr.init(handle.clone());
             let downloads_mgr = app.state::<AppState>().downloads_manager.clone();
             if let Ok(app_data_dir) = handle.path().app_data_dir() {
-                downloads_mgr.init(app_data_dir, handle.clone());
+                downloads_mgr.init(app_data_dir.clone(), handle.clone());
+            }
+            let settings_mgr = app.state::<AppState>().settings_manager.clone();
+            if let Ok(app_data_dir) = handle.path().app_data_dir() {
+                settings_mgr.init(app_data_dir, handle.clone());
             }
             Ok(())
         })

@@ -263,6 +263,21 @@ class LauncherStore {
       return false;
     }
   }
+
+  async toggleAppEnabled(id: string, enabled: boolean): Promise<void> {
+    const app = this.apps.find((a) => a.id === id);
+    if (app) {
+      await this.saveEdit({ ...app, enabled });
+    }
+  }
+
+  async removeById(id: string): Promise<boolean> {
+    const app = this.apps.find((a) => a.id === id);
+    if (app) {
+      return this.remove(app);
+    }
+    return false;
+  }
 }
 
 export const launcherStore = new LauncherStore();

@@ -150,6 +150,18 @@ class ClipboardStore {
   }
 
   /**
+   * Sets clipboard paused state explicitly.
+   */
+  async setPaused(paused: boolean): Promise<void> {
+    try {
+      await invoke("set_clipboard_paused", { paused });
+      this.isPaused = paused;
+    } catch (err) {
+      console.error("Failed to set clipboard paused:", err);
+    }
+  }
+
+  /**
    * Sets maximum history items (1..=100).
    */
   async setMaxItems(max: number): Promise<void> {

@@ -19,14 +19,16 @@
   import IconClipboard from "../icons/IconClipboard.svelte";
   import IconBattery from "../icons/IconBattery.svelte";
   import IconDownload from "../icons/IconDownload.svelte";
+  import IconSettings from "../icons/IconSettings.svelte";
   import { contextEngine, type ContextCandidate } from "../app/state/context-engine";
   import type { MascotState } from "../mascot/types";
 
   interface Props {
     backendConnected: boolean;
+    onOpenSettings?: () => void;
   }
 
-  let { backendConnected }: Props = $props();
+  let { backendConnected, onOpenSettings }: Props = $props();
 
   let mascotState = $state<MascotState>("idle");
   let activeCandidate = $state<ContextCandidate>(contextEngine.current);
@@ -166,6 +168,19 @@
                   color={downloadsStore.hasActiveDownload ? "#38bdf8" : "var(--text-secondary)"}
                 />
                 <span>DL</span>
+              </button>
+              <button
+                type="button"
+                class="quick-action-trigger"
+                onclick={(e) => {
+                  e.stopPropagation();
+                  onOpenSettings?.();
+                }}
+                title="Open Settings (Esc to close)"
+                aria-label="Open Settings"
+              >
+                <IconSettings size={10} color="var(--text-secondary)" />
+                <span>Set</span>
               </button>
             </div>
           </div>

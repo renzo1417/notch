@@ -6,6 +6,7 @@ use crate::integrations::foreground::ForegroundManager;
 use crate::integrations::launcher::LauncherManager;
 use crate::integrations::media::MediaManager;
 use crate::integrations::power::PowerManager;
+use crate::integrations::settings::SettingsManager;
 
 /// Runtime configuration for the notch shell window.
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -35,6 +36,7 @@ pub struct AppState {
     pub clipboard_manager: Arc<ClipboardManager>,
     pub power_manager: Arc<PowerManager>,
     pub downloads_manager: Arc<DownloadsManager>,
+    pub settings_manager: Arc<SettingsManager>,
 }
 
 impl Default for AppState {
@@ -48,6 +50,7 @@ impl Default for AppState {
             clipboard_manager: Arc::new(ClipboardManager::new()),
             power_manager: Arc::new(PowerManager::new()),
             downloads_manager: Arc::new(DownloadsManager::new()),
+            settings_manager: Arc::new(SettingsManager::new()),
         }
     }
 }

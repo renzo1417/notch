@@ -84,7 +84,11 @@ EBWebView/
 launcher_apps.json
 clipboard_history.json
 downloads_config.json
+watched_folders.json
+settings.json
 *.local.json
+*.bak
+*.corrupted.bak
 *.tmp
 *.temp
 *.crdownload
