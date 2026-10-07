@@ -96,3 +96,14 @@ settings.json
 *.download
 *.!ut
 
+# Test & Coverage Outputs
+test-results/
+.coverage/
+*.lcov
+
+# Crash Dumps & Diagnostic Logs
+*.dmp
+*.mdmp
+minidump/
+crash.log
+

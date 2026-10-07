@@ -26,7 +26,7 @@ export class MascotRenderer {
     const breathingY = state.breathingOffset;
     const hopY = state.celebrateHop;
     const warningShakeX =
-      state.currentState === "warning" ? Math.sin(Date.now() * 0.05) * 1.2 : 0;
+      state.currentState === "warning" ? state.warningAlertProgress * 1.2 : 0;
 
     const anchorY = centerY + 18; // Base anchor for squash & stretch
 

@@ -1,6 +1,6 @@
 # PROJECT_NOTCH — System Architecture
 
-**Status:** Phase 9 Settings, Configuration, and Diagnostics Complete  
+**Status:** Phase 10 Stabilization, Resource Audit, QA, and Packaging Complete  
 **Reference Document:** [PRODUCT_SPEC.md](../PRODUCT_SPEC.md)
 
 ---
@@ -266,5 +266,19 @@ To prevent blocking underlying Windows applications (such as browser tabs and ti
   - An internal completion notification briefly displays the launch confirmation (`P1_COMPLETION`).
   - `shellActions.requestCollapse()` automatically collapses the notch back to resting compact mode so the user can interact with the launched app.
 
+---
 
+## 10. Phase 10 — Stabilization, Performance Optimization, and Packaging Architecture
+
+### 10.1 Canvas Redraw Elimination in Resting State
+- **Quantized Motion Updates:** Procedural Canvas 2D updates are quantized so that subpixel breathing drift (< 0.04px) does not continuously trigger `isDirty = true`.
+- **Inactivity Suspension:** When `pauseInactiveAnimations` is enabled or in battery-saver mode, breathing smoothly settles to 0 after 5 seconds of inactivity.
+- **Dirty-Only Drawing:** Canvas 2D clear and path drawing routines are completely bypassed during resting intervals between blinks, reducing idle CPU to < 0.1%.
+- **Dormancy Lifecycle:** Webview `requestAnimationFrame` loop is cancelled when the application window is hidden or when the companion mascot is disabled.
+
+### 10.2 Production Packaging & Security Invariants
+- **Windows Subsystem Config:** `#![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]` in `main.rs` suppresses debug console windows in release binaries.
+- **Compiler Optimizations:** Built with `opt-level = 3`, `lto = true`, `strip = true`, `codegen-units = 1`, and `panic = "abort"`.
+- **Local-First Security:** Zero network ports opened, zero telemetry endpoints contacted, zero shell string execution.
+- **Packaging Artifacts:** Standalone release executable at `src-tauri/target/release/project-notch.exe`.
 

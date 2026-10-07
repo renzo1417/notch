@@ -239,9 +239,10 @@ export class MascotStateMachine {
       this.state.gaze.x += gazeDx * 0.16;
       this.state.gaze.y += gazeDy * 0.16;
       isDirty = true;
-    } else {
+    } else if (this.state.gaze.x !== this.state.targetGaze.x || this.state.gaze.y !== this.state.targetGaze.y) {
       this.state.gaze.x = this.state.targetGaze.x;
       this.state.gaze.y = this.state.targetGaze.y;
+      isDirty = true;
     }
 
     // 5. Harmonic Spring Physics for Squash & Stretch
@@ -257,19 +258,43 @@ export class MascotStateMachine {
 
     if (Math.abs(displacementY) > 0.003 || Math.abs(this.state.squashVelocityY) > 0.003) {
       isDirty = true;
-    } else {
+    } else if (this.state.squashX !== 1.0 || this.state.squashY !== 1.0) {
       this.state.squashX = 1.0;
       this.state.squashY = 1.0;
       this.state.squashVelocityY = 0;
+      isDirty = true;
     }
 
     // 6. Subtle Visible-Only Breathing (Sine wave)
-    const breathingPeriodMs = this.state.currentState === "sleepy" ? 4200 : 3400;
-    const breathingPhase = (now % breathingPeriodMs) / breathingPeriodMs;
-    const breathingAmplitude = this.state.currentState === "sleepy" ? 1.4 : 0.8;
-    this.state.breathingOffset = Math.sin(breathingPhase * Math.PI * 2) * breathingAmplitude;
-    // Breathing changes continuously when visible
-    isDirty = true;
+    const isBreathingPaused =
+      this.config.animationIntensity <= 0 ||
+      (this.config.pauseInactiveAnimation === true &&
+        now - this.lastActivityMs > 5000 &&
+        this.state.currentState === "idle");
+
+    if (isBreathingPaused) {
+      if (Math.abs(this.state.breathingOffset) > 0.02) {
+        this.state.breathingOffset *= 0.82; // smoothly decay to 0
+        isDirty = true;
+      } else if (this.state.breathingOffset !== 0) {
+        this.state.breathingOffset = 0;
+        isDirty = true;
+      }
+    } else {
+      const breathingPeriodMs = this.state.currentState === "sleepy" ? 4200 : 3400;
+      const breathingPhase = (now % breathingPeriodMs) / breathingPeriodMs;
+      const intensity = Math.min(1.0, Math.max(0.0, this.config.animationIntensity));
+      const breathingAmplitude = (this.state.currentState === "sleepy" ? 1.4 : 0.8) * intensity;
+      const newBreathingOffset = Math.sin(breathingPhase * Math.PI * 2) * breathingAmplitude;
+
+      // Only repaint if breathing movement is perceptible (>= 0.04px) or if already dirty from other motion
+      if (Math.abs(newBreathingOffset - this.state.breathingOffset) >= 0.04) {
+        this.state.breathingOffset = newBreathingOffset;
+        isDirty = true;
+      } else if (isDirty) {
+        this.state.breathingOffset = newBreathingOffset;
+      }
+    }
 
     // 7. Dizzy rotation
     if (this.state.currentState === "dizzy") {
@@ -288,23 +313,24 @@ export class MascotStateMachine {
           size: 7 + Math.random() * 2,
           age: 0,
         });
-      }
-
-      this.state.sleepParticles = this.state.sleepParticles
-        .map((p) => ({
-          ...p,
-          x: p.x + Math.sin(p.age * 0.05) * 0.35,
-          y: p.y - 0.45,
-          opacity: Math.max(0, p.opacity - 0.012),
-          age: p.age + 1,
-        }))
-        .filter((p) => p.opacity > 0);
-
-      if (this.state.sleepParticles.length > 0) {
         isDirty = true;
       }
-    } else {
+
+      if (this.state.sleepParticles.length > 0) {
+        this.state.sleepParticles = this.state.sleepParticles
+          .map((p) => ({
+            ...p,
+            x: p.x + Math.sin(p.age * 0.05) * 0.35,
+            y: p.y - 0.45,
+            opacity: Math.max(0, p.opacity - 0.012),
+            age: p.age + 1,
+          }))
+          .filter((p) => p.opacity > 0);
+        isDirty = true;
+      }
+    } else if (this.state.sleepParticles.length > 0) {
       this.state.sleepParticles = [];
+      isDirty = true;
     }
 
     // 9. Celebrate hop physics
@@ -312,14 +338,18 @@ export class MascotStateMachine {
       const hopCycle = (now % 800) / 800;
       this.state.celebrateHop = -Math.sin(hopCycle * Math.PI) * 4.5;
       isDirty = true;
-    } else {
+    } else if (this.state.celebrateHop !== 0) {
       this.state.celebrateHop = 0;
+      isDirty = true;
     }
 
     // 10. Warning alert pulse
     if (this.state.currentState === "warning") {
       const alertPhase = (now % 900) / 900;
       this.state.warningAlertProgress = Math.sin(alertPhase * Math.PI * 2);
+      isDirty = true;
+    } else if (this.state.warningAlertProgress !== 0) {
+      this.state.warningAlertProgress = 0;
       isDirty = true;
     }
 

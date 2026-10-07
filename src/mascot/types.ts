@@ -24,6 +24,7 @@ export interface MascotConfig {
   enabled: boolean;
   trackCursor: boolean;
   animationIntensity: number; // 0.0 to 1.0 (respects reduced motion)
+  pauseInactiveAnimation?: boolean;
 }
 
 export interface MascotRenderState {

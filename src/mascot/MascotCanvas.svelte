@@ -31,6 +31,8 @@
   let isHovered: boolean = $state(false);
   let unsubMascot: (() => void) | null = null;
 
+  let initialRenderDone = false;
+
   const mascotConfig = $derived(settingsStore.state.mascot);
   const perfConfig = $derived(settingsStore.state.performance);
   const appearanceConfig = $derived(settingsStore.state.appearance);
@@ -43,7 +45,20 @@
         enabled: mascotConfig.enabled,
         trackCursor: mascotConfig.cursorTracking,
         animationIntensity: intensity,
+        pauseInactiveAnimation: perfConfig.pauseInactiveAnimations,
       });
+
+      // Completely halt or resume rAF loop based on active enabled state
+      if (!mascotConfig.enabled) {
+        if (animationFrameId !== null) {
+          cancelAnimationFrame(animationFrameId);
+          animationFrameId = null;
+        }
+      } else if (isWindowVisible && animationFrameId === null) {
+        lastFrameTimeMs = 0;
+        initialRenderDone = false;
+        animationFrameId = requestAnimationFrame(renderFrame);
+      }
     }
   });
 
@@ -53,8 +68,13 @@
   }
 
   function renderFrame(timeMs: number) {
-    if (!canvasElement || !renderer || !stateMachine || !isWindowVisible) {
-      animationFrameId = requestAnimationFrame(renderFrame);
+    // If hidden, disabled, or unmounted, stop scheduling animation frames
+    if (!canvasElement || !renderer || !stateMachine || !isWindowVisible || !mascotConfig.enabled) {
+      if (isWindowVisible && mascotConfig.enabled && canvasElement) {
+        animationFrameId = requestAnimationFrame(renderFrame);
+      } else {
+        animationFrameId = null;
+      }
       return;
     }
 
@@ -67,8 +87,8 @@
     // Advance simulation state
     const isDirty = stateMachine.update(dtMs);
 
-    // Only repaint if visual elements actively changed
-    if (isDirty) {
+    // Only repaint if visual elements actively changed or initial resting frame needed
+    if (isDirty || !initialRenderDone) {
       const ctx = canvasElement.getContext("2d");
       if (ctx) {
         const dpr = window.devicePixelRatio || 1;
@@ -84,6 +104,7 @@
           },
           dpr,
         });
+        initialRenderDone = true;
       }
     }
 
@@ -135,6 +156,15 @@
     isWindowVisible = !document.hidden;
     if (isWindowVisible) {
       lastFrameTimeMs = 0;
+      if (animationFrameId === null && mascotConfig.enabled) {
+        initialRenderDone = false;
+        animationFrameId = requestAnimationFrame(renderFrame);
+      }
+    } else {
+      if (animationFrameId !== null) {
+        cancelAnimationFrame(animationFrameId);
+        animationFrameId = null;
+      }
     }
   }
 
@@ -145,6 +175,7 @@
     canvasElement.height = Math.round(size * dpr);
     canvasElement.style.width = `${size}px`;
     canvasElement.style.height = `${size}px`;
+    initialRenderDone = false;
   }
 
   onMount(() => {
@@ -153,6 +184,7 @@
       enabled: mascotConfig.enabled,
       trackCursor: mascotConfig.cursorTracking,
       animationIntensity: mascotConfig.animationIntensity,
+      pauseInactiveAnimation: perfConfig.pauseInactiveAnimations,
     }, updateAriaState);
 
     unsubMascot = mascotStore.subscribe((state, durationMs) => {
@@ -164,12 +196,15 @@
     window.addEventListener("resize", setupCanvasDpr, { passive: true });
     document.addEventListener("visibilitychange", handleVisibilityChange);
 
-    animationFrameId = requestAnimationFrame(renderFrame);
+    if (mascotConfig.enabled && isWindowVisible) {
+      animationFrameId = requestAnimationFrame(renderFrame);
+    }
   });
 
   onDestroy(() => {
     if (animationFrameId !== null) {
       cancelAnimationFrame(animationFrameId);
+      animationFrameId = null;
     }
     if (unsubMascot) {
       unsubMascot();
