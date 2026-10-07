@@ -8,14 +8,17 @@
   import LauncherDockView from "../modules/launcher/LauncherDockView.svelte";
   import ClipboardContextView from "../modules/clipboard/ClipboardContextView.svelte";
   import BatteryContextView from "../modules/battery/BatteryContextView.svelte";
+  import DownloadContextView from "../modules/downloads/DownloadContextView.svelte";
   import { timerStore } from "../modules/timer/timer-store.svelte";
   import { launcherStore } from "../modules/launcher/launcher-store.svelte";
   import { clipboardStore } from "../modules/clipboard/clipboard-store.svelte";
   import { batteryStore } from "../modules/battery/battery-store.svelte";
+  import { downloadsStore } from "../modules/downloads/downloads-store.svelte";
   import IconTimer from "../icons/IconTimer.svelte";
   import IconApp from "../icons/IconApp.svelte";
   import IconClipboard from "../icons/IconClipboard.svelte";
   import IconBattery from "../icons/IconBattery.svelte";
+  import IconDownload from "../icons/IconDownload.svelte";
   import { contextEngine, type ContextCandidate } from "../app/state/context-engine";
   import type { MascotState } from "../mascot/types";
 
@@ -61,6 +64,8 @@
   <div class="zone center-zone" aria-label="Context surface: {activeCandidate.mode}">
     {#if activeCandidate.mode === "notification"}
       <NotificationContextView />
+    {:else if activeCandidate.mode === "download"}
+      <DownloadContextView />
     {:else if activeCandidate.mode === "launcher"}
       <LauncherDockView />
     {:else if activeCandidate.mode === "clipboard"}
@@ -144,6 +149,23 @@
                   level={batteryStore.percentage}
                 />
                 <span>{batteryStore.formattedPercent}</span>
+              </button>
+              <button
+                type="button"
+                class="quick-action-trigger"
+                class:active-dl={downloadsStore.hasActiveDownload}
+                onclick={(e) => {
+                  e.stopPropagation();
+                  downloadsStore.openDownloadSurface();
+                }}
+                title={downloadsStore.hasActiveDownload ? `Downloading: ${downloadsStore.activeDownload?.fileName}` : "Downloads & Watched Folders"}
+                aria-label="Open Downloads Surface"
+              >
+                <IconDownload
+                  size={10}
+                  color={downloadsStore.hasActiveDownload ? "#38bdf8" : "var(--text-secondary)"}
+                />
+                <span>DL</span>
               </button>
             </div>
           </div>
@@ -293,6 +315,11 @@
   .quick-action-trigger.low-battery {
     border-color: rgba(239, 68, 68, 0.4);
     color: #ef4444;
+  }
+
+  .quick-action-trigger.active-dl {
+    border-color: rgba(56, 189, 248, 0.4);
+    color: #38bdf8;
   }
 
   .context-meta {

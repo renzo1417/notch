@@ -7,6 +7,7 @@
   import { timerStore } from "../modules/timer/timer-store.svelte";
   import { clipboardStore } from "../modules/clipboard/clipboard-store.svelte";
   import { batteryStore } from "../modules/battery/battery-store.svelte";
+  import { downloadsStore } from "../modules/downloads/downloads-store.svelte";
   import { contextEngine, type ContextCandidate } from "../app/state/context-engine";
 
   interface Props {
@@ -23,6 +24,7 @@
     codingStore.init();
     clipboardStore.init();
     batteryStore.init();
+    downloadsStore.init();
     unsubContext = contextEngine.subscribe((cand) => {
       activeCandidate = cand;
     });
@@ -56,6 +58,14 @@
       ? timerStore.formattedCompact
       : activeCandidate.mode === "coding"
       ? compactCodingLabel
+      : activeCandidate.mode === "download"
+      ? (downloadsStore.activeDownload
+          ? (downloadsStore.activeDownload.progressPercent !== undefined
+              ? `${downloadsStore.activeDownload.fileName} · ${downloadsStore.activeDownload.progressPercent}%`
+              : `Downloading… · ${downloadsStore.activeDownload.fileName}`)
+          : downloadsStore.recentCompleted
+          ? `Complete · ${downloadsStore.recentCompleted.fileName}`
+          : "Downloads")
       : activeCandidate.mode === "launcher"
       ? "Apps Dock"
       : activeCandidate.mode === "clipboard"
@@ -83,6 +93,7 @@
       class:connected={backendConnected}
       class:timer={activeCandidate.mode === "timer"}
       class:coding={activeCandidate.mode === "coding"}
+      class:download={activeCandidate.mode === "download"}
       class:launcher={activeCandidate.mode === "launcher"}
       class:clipboard={activeCandidate.mode === "clipboard"}
       class:battery={activeCandidate.mode === "battery"}
@@ -93,6 +104,10 @@
         ? `Focus Timer: ${timerStore.formattedTime}`
         : activeCandidate.mode === "coding"
         ? `Coding: ${compactCodingLabel}`
+        : activeCandidate.mode === "download"
+        ? (downloadsStore.activeDownload
+            ? `Downloading: ${downloadsStore.activeDownload.fileName}`
+            : "Downloads")
         : activeCandidate.mode === "launcher"
         ? "Apps Dock"
         : activeCandidate.mode === "clipboard"
@@ -173,6 +188,10 @@
   }
 
   .status-dot.coding {
+    background-color: #38bdf8;
+  }
+
+  .status-dot.download {
     background-color: #38bdf8;
   }
 

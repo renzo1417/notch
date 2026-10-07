@@ -43,6 +43,12 @@ pub fn run() {
             commands::clipboard::set_clipboard_max_items,
             commands::battery::get_battery_state,
             commands::battery::refresh_battery_state,
+            commands::downloads::get_watched_folders,
+            commands::downloads::add_watched_folder,
+            commands::downloads::remove_watched_folder,
+            commands::downloads::pick_download_folder,
+            commands::downloads::get_download_state,
+            commands::downloads::open_download_folder,
         ])
         .setup(|app| {
             let handle = app.handle();
@@ -60,6 +66,10 @@ pub fn run() {
             clipboard_mgr.init(handle.clone());
             let power_mgr = app.state::<AppState>().power_manager.clone();
             power_mgr.init(handle.clone());
+            let downloads_mgr = app.state::<AppState>().downloads_manager.clone();
+            if let Ok(app_data_dir) = handle.path().app_data_dir() {
+                downloads_mgr.init(app_data_dir, handle.clone());
+            }
             Ok(())
         })
         .on_window_event(|window, event| match event {

@@ -1,6 +1,6 @@
 # PROJECT_NOTCH — Windows Native Integrations
 
-**Status:** Phase 4 Context Engine & Coding Detection Complete  
+**Status:** Phase 8 Downloads Awareness Complete  
 **Reference Document:** [PRODUCT_SPEC.md](../PRODUCT_SPEC.md)
 
 ---
@@ -10,8 +10,8 @@
 All operating system interactions in `PROJECT_NOTCH` are managed through isolated native Rust modules within `src-tauri/src/integrations/`. The frontend receives typed data structures and never communicates directly with Win32/COM runtime interfaces.
 
 ### Core Implementation Rules
-1. **Prefer native Windows events over polling:** Windows messages and callbacks are used whenever available (e.g. WinRT GSMTC session events, Win32 `SetWinEventHook` with `EVENT_SYSTEM_FOREGROUND`, `WM_CLIPBOARDUPDATE`).
-2. **Never fake missing capabilities:** If metadata, battery time, or progress is unavailable from Windows, the UI cleanly presents an honest null or partial state.
+1. **Prefer native Windows events over polling:** Windows messages and callbacks are used whenever available (e.g. WinRT GSMTC session events, Win32 `SetWinEventHook` with `EVENT_SYSTEM_FOREGROUND`, `WM_CLIPBOARDUPDATE`, Win32 `ReadDirectoryChangesW`).
+2. **Never fake missing capabilities:** If metadata, battery time, or progress is unavailable from Windows, the UI cleanly presents an honest null or partial state. Never invent progress percentages.
 3. **Graceful degradation:** If an OS component fails or is denied permission, only that feature is disabled; the notch shell and mascot remain functional.
 4. **Local-first privacy:** Zero network requests, zero telemetry, zero keystroke recording, and clipboard persistence OFF by default.
 
@@ -25,7 +25,7 @@ All operating system interactions in `PROJECT_NOTCH` are managed through isolate
 | **Foreground Process & Coding** | Win32 `SetWinEventHook` (`EVENT_SYSTEM_FOREGROUND`) + `QueryFullProcessImageNameW` | Event-driven debounced active editor detection (VS Code, Visual Studio, JetBrains, Terminals, Antigravity) with session duration | **Implemented (Phase 4)** in `src-tauri/src/integrations/foreground.rs` |
 | **Power & Battery** | Win32 `GetSystemPowerStatus` | Battery percentage, AC/battery source, charging indicator, valid remaining time | **Implemented (Phase 7)** in `src-tauri/src/integrations/power.rs` |
 | **Clipboard** | Win32 `AddClipboardFormatListener` & `WM_CLIPBOARDUPDATE` | Event-driven text clipboard change notifications, consecutive deduplication, volatile memory privacy | **Implemented (Phase 7)** in `src-tauri/src/integrations/clipboard.rs` |
-| **Downloads Watcher** | Filesystem change events on configured watch directories | Watched folder change awareness | Typed placeholder model in `integrations/downloads.rs` |
+| **Downloads Watcher** | Win32 `ReadDirectoryChangesW` + `IFileOpenDialog` (`FOS_PICKFOLDERS`) | Watched folder download awareness, partial download heuristics, event deduplication, clean watcher cleanup | **Implemented (Phase 8)** in `src-tauri/src/integrations/downloads.rs` |
 | **App Launcher** | `std::process::Command` + Win32 `IFileOpenDialog`, `IShellLinkW`, `SHGetFileInfoW` | Safe application selection, shortcut target resolution, native icon extraction, and direct process launching without shell interpretation | **Implemented (Phase 6)** in `src-tauri/src/integrations/launcher.rs` |
 | **Startup** | Windows Registry `HKCU\Software\Microsoft\Windows\CurrentVersion\Run` | Optional launch-at-login setting | Typed placeholder model in `integrations/startup.rs` |
 
@@ -129,8 +129,51 @@ All operating system interactions in `PROJECT_NOTCH` are managed through isolate
 - **Platform Limitations:**
   - If another application holds exclusive locks on the clipboard during clipboard updates, `OpenClipboard` is retried with backoff. If permanently locked, the update is dropped cleanly without crashing.
 
-### 3.6 Global Download Progress
-- **Limitation:** Windows does not provide a centralized operating system API to inspect browser download byte progress.
-- **Handling:** The user configures watched download folders. Filesystem events observe active `.crdownload`, `.part`, or temporary file extensions and confirm completion. Progress percentages are only rendered if a genuine size signal exists.
+### 3.6 Downloads Awareness & Watched Folders — Phase 8 Implementation
+- **API Mechanism:** Native Win32 `ReadDirectoryChangesW` via `windows::Win32::Storage::FileSystem` and `windows::Win32::System::IO` on dedicated background worker threads per watched folder.
+- **Directory Watching Parameters:**
+  - Opened via `CreateFileW` with `FILE_LIST_DIRECTORY.0`, `FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE`, and `FILE_FLAG_BACKUP_SEMANTICS`.
+  - Watched filters: `FILE_NOTIFY_CHANGE_FILE_NAME | FILE_NOTIFY_CHANGE_LAST_WRITE | FILE_NOTIFY_CHANGE_SIZE`.
+  - Zero tight polling loops: blocks on the operating system until the filesystem kernel driver signals file modifications or renames.
+- **Watched Folders Management:**
+  - Default configured folder: `%USERPROFILE%\Downloads` automatically initialized.
+  - Native Windows Folder Picker: `IFileOpenDialog` configured with `FOS_PICKFOLDERS` on an apartment-threaded COM thread (`pick_download_folder`).
+  - Persistent configuration: saved locally to `downloads_config.json` in local app data directory.
+  - User can add and remove watched folders anytime.
+- **Partial Download Heuristics:**
+  - Recognized partial suffixes:
+    - `.crdownload` — Chromium, Google Chrome, Microsoft Edge, Brave, Opera, Vivaldi.
+    - `.part` — Mozilla Firefox, Waterfox, LibreWolf, Transmission.
+    - `.download` — Safari and native macOS/cross-platform download tools.
+    - `.!ut` — uTorrent, BitTorrent.
+    - `.mega` — Mega desktop client.
+    - `.tmp` / `.temp` — temporary download files from command-line downloaders.
+  - Target filename extraction: automatically strips partial extensions to surface the clean intended file name (e.g. `assets.zip.crdownload` -> `assets.zip`).
+- **Anti-Fabrication Progress Invariant:**
+  - Modern web browsers write temporary files dynamically from 0 bytes up to total bytes. The expected total file size is maintained in browser memory or SQLite history databases, not standard filesystem metadata headers.
+  - **Never invent progress percentages:** Unless a genuine, trustworthy total size signal exists, `progressPercent` is strictly reported as `None`.
+  - Compact and expanded UI surfaces display:
+    ```text
+    Downloading…
+    filename
+    ```
+    Percentage is only rendered if an authentic total size signal exists.
+- **Event Deduplication & Debounce Strategy:**
+  - Windows emits frequent `FILE_ACTION_MODIFIED` events as download chunks write (often dozens of events per second).
+  - Debouncing: active download progress events (`download.changed`) are throttled to at most once per 1000ms per file.
+  - Completion Latch: when a partial file is renamed (`FILE_ACTION_RENAMED_NEW_NAME` from `.crdownload` or `.part` to final file name), completion is detected. The file path is latched in a 10-second deduplication cache so secondary write events do not emit duplicate notifications.
+- **Completion Workflow (Requirement 7):**
+  - **Short center notification:** Pushed to Context Engine at `P1_COMPLETION` with title "Download complete" and the completed filename (duration ~4500ms).
+  - **Mascot celebration:** Triggers `mascotStore.celebrate(3500)` showing celebratory animation.
+  - **Open Folder action:** Action button triggers `open_download_folder`, highlighting the completed file in Windows File Explorer via `explorer.exe /select,"<filePath>"` (or opening the parent folder).
+- **Clean Watcher Cleanup (Requirement 9):**
+  - Each watched folder worker thread maintains a cancellation `stop_signal: Arc<AtomicBool>` and the directory handle.
+  - When a folder is removed: `CancelIoEx` aborts pending I/O, `CloseHandle` releases OS resources, and the thread is joined.
+  - When `DownloadsManager` drops or the app quits: all active watchers are cleanly shut down and handles closed.
+- **Platform & Browser Limitations:**
+  1. *No Generic Windows API for In-Browser Progress:* Windows does not provide a universal OS-level hook to monitor byte progress inside sandboxed web browsers without browser extensions or invasive debugging APIs.
+  2. *Direct Writes without Temporary Suffixes:* Some tools or browsers (e.g. "Save Image As...") write directly to the final filename without a `.crdownload` or `.part` extension.
+  3. *Unwatched Directories:* Files saved outside of user-configured watched folders cannot be detected.
+  4. *Cloud Storage Virtual Files:* Cloud sync providers (OneDrive, Dropbox) may emit hydration events that look like write activity when downloading files on demand.
 
 

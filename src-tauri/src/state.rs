@@ -1,6 +1,7 @@
 use serde::{Deserialize, Serialize};
 use std::sync::{Arc, Mutex};
 use crate::integrations::clipboard::ClipboardManager;
+use crate::integrations::downloads::DownloadsManager;
 use crate::integrations::foreground::ForegroundManager;
 use crate::integrations::launcher::LauncherManager;
 use crate::integrations::media::MediaManager;
@@ -33,6 +34,7 @@ pub struct AppState {
     pub launcher_manager: Arc<LauncherManager>,
     pub clipboard_manager: Arc<ClipboardManager>,
     pub power_manager: Arc<PowerManager>,
+    pub downloads_manager: Arc<DownloadsManager>,
 }
 
 impl Default for AppState {
@@ -45,6 +47,7 @@ impl Default for AppState {
             launcher_manager: Arc::new(LauncherManager::new()),
             clipboard_manager: Arc::new(ClipboardManager::new()),
             power_manager: Arc::new(PowerManager::new()),
+            downloads_manager: Arc::new(DownloadsManager::new()),
         }
     }
 }
