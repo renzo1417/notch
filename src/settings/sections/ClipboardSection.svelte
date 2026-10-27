@@ -31,7 +31,7 @@
   }
 </script>
 
-<div class="section-container" role="tabpanel" aria-label="Clipboard Settings">
+<div class="section-container" role="group" aria-label="Clipboard Settings">
   <!-- Enable Clipboard -->
   <div class="setting-row">
     <div class="setting-info">
@@ -126,146 +126,8 @@
       onclick={handleClearHistory}
       title="Clear all stored clipboard history"
     >
-      <IconTrash size={12} color="currentColor" />
+      <IconTrash size={16} color="currentColor" />
       <span>Clear Now</span>
     </button>
   </div>
 </div>
-
-<style>
-  .section-container {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-    width: 100%;
-  }
-
-  .setting-row {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: var(--space-12);
-    padding: 6px 10px;
-    background: var(--surface-raised);
-    border: 1px solid var(--border-subtle);
-    border-radius: var(--radius-control);
-    transition: opacity var(--motion-micro) var(--ease-natural);
-  }
-
-  .setting-row.disabled {
-    opacity: 0.5;
-    pointer-events: none;
-  }
-
-  .setting-info {
-    display: flex;
-    flex-direction: column;
-    gap: 2px;
-    min-width: 0;
-  }
-
-  .setting-label {
-    font-size: var(--font-size-label);
-    font-weight: 600;
-    color: var(--text-primary);
-    line-height: var(--line-height-tight);
-  }
-
-  .setting-desc {
-    font-size: var(--font-size-tiny);
-    color: var(--text-tertiary);
-    line-height: var(--line-height-tight);
-  }
-
-  .privacy-note {
-    color: #eab308;
-  }
-
-  .slider-group {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    flex-shrink: 0;
-  }
-
-  .win-slider {
-    width: 90px;
-    accent-color: var(--accent-primary);
-    cursor: pointer;
-  }
-
-  .slider-label {
-    font-size: var(--font-size-meta);
-    font-weight: 600;
-    color: var(--text-secondary);
-    min-width: 50px;
-    text-align: right;
-  }
-
-  .win-switch {
-    width: 38px;
-    height: 20px;
-    border-radius: 9999px;
-    background: var(--surface-hover);
-    border: 1px solid var(--border-strong);
-    padding: 2px;
-    cursor: pointer;
-    position: relative;
-    transition: background-color var(--motion-micro) var(--ease-natural),
-                border-color var(--motion-micro) var(--ease-natural);
-    flex-shrink: 0;
-  }
-
-  .win-switch.checked {
-    background: var(--accent-primary);
-    border-color: var(--accent-primary);
-  }
-
-  .switch-thumb {
-    display: block;
-    width: 14px;
-    height: 14px;
-    border-radius: 50%;
-    background: white;
-    transform: translateX(0);
-    transition: transform var(--motion-micro) var(--ease-natural);
-  }
-
-  .win-switch.checked .switch-thumb {
-    transform: translateX(18px);
-  }
-
-  .action-button {
-    display: inline-flex;
-    align-items: center;
-    gap: 5px;
-    padding: 4px 8px;
-    border-radius: 6px;
-    font-size: var(--font-size-meta);
-    font-weight: 500;
-    border: 1px solid var(--border-subtle);
-    background: var(--surface-root);
-    color: var(--text-secondary);
-    cursor: pointer;
-    transition: all var(--motion-micro) var(--ease-natural);
-  }
-
-  .action-button:hover:not(:disabled) {
-    background: var(--surface-hover);
-    color: var(--text-primary);
-  }
-
-  .action-button.danger {
-    color: #ef4444;
-    border-color: rgba(239, 68, 68, 0.3);
-  }
-
-  .action-button.danger:hover:not(:disabled) {
-    background: rgba(239, 68, 68, 0.15);
-  }
-
-  .action-button:disabled {
-    opacity: 0.4;
-    cursor: not-allowed;
-  }
-</style>

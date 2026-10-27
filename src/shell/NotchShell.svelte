@@ -1,241 +1,159 @@
 <script lang="ts">
-  import { onMount, onDestroy } from "svelte";
+  import { onMount, onDestroy, tick } from "svelte";
   import { invoke } from "@tauri-apps/api/core";
   import { listen, type UnlistenFn } from "@tauri-apps/api/event";
   import CompactNotch from "./CompactNotch.svelte";
   import ExpandedNotch from "./ExpandedNotch.svelte";
   import SettingsView from "../settings/SettingsView.svelte";
-  import type { NotchShellState } from "../app/state/shell-state";
-  import { shellActions } from "../app/state/shell-state";
-  import { SHELL_MOTION } from "./shell-motion";
+  import { backState, SHELL_STATE_DIMENSIONS, shellActions, type NotchShellState } from "../app/state/shell-state";
+  import { ShellTransition } from "./shell-transition";
   import { settingsStore } from "../settings/settings-store.svelte";
-
-  interface PingResponse {
-    message: string;
-    version: string;
-    timestamp_ms: number;
-    backend_ready: boolean;
-  }
+  import { launcherStore } from "../modules/launcher/launcher-store.svelte";
+  import { timerStore } from "../modules/timer/timer-store.svelte";
+  import { clipboardStore } from "../modules/clipboard/clipboard-store.svelte";
+  import { downloadsStore } from "../modules/downloads/downloads-store.svelte";
+  import { mediaStore } from "../modules/music/media-store.svelte";
+  import { codingStore } from "../modules/coding/coding-store.svelte";
+  import { batteryStore } from "../modules/battery/battery-store.svelte";
 
   let shellState = $state<NotchShellState>("compact");
-  let backendConnected = $state(false);
-  let collapseTimeout: ReturnType<typeof setTimeout> | null = null;
-  let autoCollapseTimer: ReturnType<typeof setTimeout> | null = null;
-  let unsubCollapse: (() => void) | null = null;
-  let unlistenOpenSettings: UnlistenFn | null = null;
+  let shell: HTMLDivElement;
+  let resizeError = $state("");
+  let pointerInside = false;
+  let keyboardActive = false;
+  let autoCollapse: ReturnType<typeof setTimeout> | null = null;
+  let unsubscribeCollapse: (() => void) | undefined;
+  let unlistenSettings: UnlistenFn | undefined;
+  let initialResize: Promise<void> = Promise.resolve();
+  let disposed = false;
+  const geometry = $derived(SHELL_STATE_DIMENSIONS[shellState]);
+  const native = typeof window !== "undefined" && "__TAURI_INTERNALS__" in window;
 
-  async function syncWindowState(state: "compact" | "expanded" | "settings") {
-    try {
-      await invoke("set_notch_state", { notchState: state });
-    } catch (err) {
-      console.error("Failed to sync notch window state:", err);
-    }
-  }
-
-  async function checkBackend() {
-    try {
-      const res = await invoke<PingResponse>("ping", {
-        clientTimestampMs: Date.now(),
-      });
-      backendConnected = res.backend_ready;
-    } catch {
-      backendConnected = false;
-    }
+  async function resize(state: NotchShellState) {
+    if (native) await invoke("set_notch_state", { notchState: state });
   }
 
   function clearAutoCollapse() {
-    if (autoCollapseTimer) {
-      clearTimeout(autoCollapseTimer);
-      autoCollapseTimer = null;
-    }
+    if (autoCollapse) clearTimeout(autoCollapse);
+    autoCollapse = null;
   }
 
   function startAutoCollapse() {
     clearAutoCollapse();
-    if (shellState === "expanded") {
-      const delay = settingsStore.state.general.autoCollapseDelayMs;
-      if (delay > 0) {
-        autoCollapseTimer = setTimeout(() => {
-          collapseNotch();
-        }, delay);
-      }
+    const delay = settingsStore.state.general.autoCollapseDelayMs;
+    if (shellState === "expanded" && !pointerInside && !(keyboardActive && shell?.contains(document.activeElement)) && delay > 0) {
+      autoCollapse = setTimeout(() => { void navigate("compact"); }, delay);
     }
   }
 
-  function collapseNotch() {
-    clearAutoCollapse();
-    if (collapseTimeout) {
-      clearTimeout(collapseTimeout);
-      collapseTimeout = null;
-    }
-    if (shellState !== "compact") {
-      shellState = "compact";
-      collapseTimeout = setTimeout(() => {
-        syncWindowState("compact");
-        collapseTimeout = null;
-      }, SHELL_MOTION.shellMs);
-    }
+  function closeSurface(state: NotchShellState) {
+    if (state === "apps") launcherStore.closeLauncherSurface();
+    if (state === "focus") timerStore.closeTimerSurface();
+    if (state === "clipboard") clipboardStore.closeClipboardSurface();
+    if (state === "downloads") downloadsStore.closeDownloadSurface();
+    if (state === "battery") batteryStore.closeBatterySurface();
   }
 
-  async function openSettings() {
-    clearAutoCollapse();
-    if (collapseTimeout) {
-      clearTimeout(collapseTimeout);
-      collapseTimeout = null;
-    }
-    await syncWindowState("settings");
-    shellState = "settings";
+  function openSurface(state: NotchShellState) {
+    if (state === "apps") launcherStore.openLauncherSurface();
+    if (state === "focus") timerStore.openTimerSurface();
+    if (state === "clipboard") clipboardStore.openClipboardSurface();
+    if (state === "downloads") downloadsStore.openDownloadSurface();
+    if (state === "battery") batteryStore.openBatterySurface();
   }
 
-  async function closeSettings() {
-    clearAutoCollapse();
-    shellState = "expanded";
-    await syncWindowState("expanded");
-    startAutoCollapse();
-  }
-
-  async function toggleExpansion() {
-    if (shellState === "settings") {
-      return;
-    }
-
-    if (collapseTimeout) {
-      clearTimeout(collapseTimeout);
-      collapseTimeout = null;
-    }
-
-    if (shellState === "compact") {
-      await syncWindowState("expanded");
-      shellState = "expanded";
+  function show(state: NotchShellState) {
+    const previous = shellState;
+    closeSurface(previous);
+    shellState = state;
+    openSurface(state);
+    void tick().then(() => {
+      if (disposed || shellState !== state) return;
+      const opener = previous === "apps" ? "apps" : previous === "focus" ? "focus" : "more";
+      const selector = state === "compact" ? '[data-focus="compact"]' :
+        state === "expanded" ? (previous === "compact" ? '[data-focus="collapse"]' : `[data-focus="${opener}"]`) :
+        state === "settings" ? '[data-focus="settings"]' : '[data-panel-focus]';
+      shell.querySelector<HTMLElement>(selector)?.focus({ preventScroll: true });
       startAutoCollapse();
-    } else {
-      collapseNotch();
-    }
+    });
   }
+
+  const transition = new ShellTransition({
+    resize: async (state) => { await initialResize; await resize(state); },
+    show,
+    duration: () => parseFloat(getComputedStyle(document.documentElement).getPropertyValue("--motion-shell")) || 0,
+  });
+
+  async function navigate(state: NotchShellState) {
+    clearAutoCollapse();
+    resizeError = "";
+    try { await transition.request(state); }
+    catch { resizeError = "Couldn’t resize the notch. Try again."; }
+  }
+
+  function back() { void navigate(backState(shellState)); }
 
   function handleKeyDown(event: KeyboardEvent) {
-    if (shellState === "settings") {
-      if (event.key === "Escape") {
-        event.preventDefault();
-        closeSettings();
-      }
-      return;
-    }
-
-    if (event.key === "Enter" || event.key === " ") {
+    keyboardActive = true;
+    if (event.key === "Escape" && shellState !== "compact") {
       event.preventDefault();
-      toggleExpansion();
+      event.stopPropagation();
+      back();
     }
   }
 
-  onMount(async () => {
-    settingsStore.init();
-    checkBackend();
-    syncWindowState("compact");
-
-    unsubCollapse = shellActions.onCollapse(() => {
-      collapseNotch();
+  onMount(() => {
+    initialResize = resize("compact").catch(() => { resizeError = "Couldn’t position the notch. Try opening it again."; });
+    void settingsStore.init();
+    void mediaStore.init();
+    void codingStore.init();
+    void clipboardStore.init();
+    void batteryStore.init();
+    void downloadsStore.init();
+    unsubscribeCollapse = shellActions.onCollapse(() => { void navigate("compact"); });
+    const motionPreference = window.matchMedia("(prefers-reduced-motion: reduce)");
+    const updateMotion = () => settingsStore.applyLiveTokens(settingsStore.state);
+    motionPreference.addEventListener("change", updateMotion);
+    if (native) void listen("open-settings", () => { void navigate("settings"); }).then((unlisten) => {
+      if (disposed) unlisten(); else unlistenSettings = unlisten;
     });
-
-    if (typeof window !== "undefined" && "__TAURI_INTERNALS__" in window) {
-      try {
-        unlistenOpenSettings = await listen("open-settings", () => {
-          openSettings();
-        });
-      } catch {
-        // Ignore outside Tauri runtime
-      }
-    }
+    return () => motionPreference.removeEventListener("change", updateMotion);
   });
 
   onDestroy(() => {
-    if (collapseTimeout) clearTimeout(collapseTimeout);
+    disposed = true;
+    transition.destroy();
     clearAutoCollapse();
-    if (unsubCollapse) unsubCollapse();
-    if (unlistenOpenSettings) unlistenOpenSettings();
-    settingsStore.destroy();
+    unsubscribeCollapse?.();
+    unlistenSettings?.();
+    closeSurface(shellState);
+    mediaStore.destroy(); codingStore.destroy(); clipboardStore.destroy();
+    batteryStore.destroy(); downloadsStore.destroy(); timerStore.destroy(); settingsStore.destroy();
   });
 </script>
 
+<svelte:window onkeydown={handleKeyDown} onpointerdown={() => { keyboardActive = false; }} />
+
 <div class="notch-wrapper">
-  <div
-    class="notch-shell"
-    class:expanded={shellState === "expanded"}
-    class:settings={shellState === "settings"}
-    role="button"
-    tabindex="0"
-    aria-label={shellState === "settings" ? "Settings Panel" : shellState === "expanded" ? "Collapse notch to compact view" : "Expand notch to detailed view"}
-    aria-expanded={shellState === "expanded" || shellState === "settings"}
-    onclick={toggleExpansion}
-    onkeydown={handleKeyDown}
-    onmouseenter={clearAutoCollapse}
-    onmouseleave={startAutoCollapse}
-  >
+  <div bind:this={shell} class="notch-shell" class:compact={shellState === "compact"}
+    style:--shell-width={`${geometry.width}px`} style:--shell-height={`${geometry.height}px`}
+    role="region" aria-label="Windows Notch" tabindex="-1"
+    onmouseenter={() => { pointerInside = true; clearAutoCollapse(); }}
+    onmouseleave={() => { pointerInside = false; startAutoCollapse(); }}
+    onfocusin={clearAutoCollapse} onfocusout={() => { setTimeout(startAutoCollapse, 0); }}>
     {#if shellState === "compact"}
-      <CompactNotch {backendConnected} />
+      <CompactNotch onopen={() => { void navigate("expanded"); }} />
     {:else if shellState === "settings"}
-      <SettingsView onclose={closeSettings} />
+      <SettingsView onclose={back} />
     {:else}
-      <ExpandedNotch {backendConnected} onOpenSettings={openSettings} />
+      <ExpandedNotch {shellState} onStateChange={(state) => { void navigate(state); }} onback={back} oncollapse={() => { void navigate("compact"); }} />
     {/if}
+    {#if resizeError}<div class="resize-error" role="alert">{resizeError}</div>{/if}
   </div>
 </div>
 
 <style>
-  .notch-wrapper {
-    display: flex;
-    justify-content: center;
-    align-items: flex-start;
-    width: 100%;
-    height: 100%;
-    padding-top: 0;
-    pointer-events: none;
-  }
-
-  .notch-shell {
-    pointer-events: auto;
-    background-color: var(--surface-root);
-    border: 1px solid var(--border-subtle);
-    border-top: none;
-    border-bottom-left-radius: var(--radius-shell);
-    border-bottom-right-radius: var(--radius-shell);
-    box-shadow: var(--shadow-soft);
-    cursor: pointer;
-    overflow: hidden;
-    outline: none;
-
-    /* Resting compact geometry */
-    width: 300px;
-    height: 38px;
-
-    /* GPU-accelerated smooth transitions */
-    transition: 
-      width var(--motion-shell) var(--ease-natural),
-      height var(--motion-shell) var(--ease-natural),
-      border-color var(--motion-micro) var(--ease-natural),
-      box-shadow var(--motion-micro) var(--ease-natural);
-  }
-
-  .notch-shell:hover {
-    border-color: var(--border-strong);
-  }
-
-  .notch-shell:focus-visible {
-    outline: 2px solid var(--accent-focus);
-    outline-offset: 1px;
-  }
-
-  /* Expanded geometry */
-  .notch-shell.expanded {
-    width: 520px;
-    height: 76px;
-  }
-
-  /* Settings geometry */
-  .notch-shell.settings {
-    width: 540px;
-    height: 360px;
-    cursor: default;
-    border-radius: var(--radius-shell);
-  }
+  .notch-wrapper { display: flex; justify-content: center; align-items: flex-start; width: 100%; height: 100%; padding: 0 16px 16px; pointer-events: none; }
+  .notch-shell { position: relative; pointer-events: auto; width: var(--shell-width); height: var(--shell-height); max-width: 100%; max-height: 100%; flex: none; overflow: hidden; outline: none; background: var(--surface-root); border: 1px solid var(--border-subtle); border-top: none; border-radius: 0 0 var(--radius-shell) var(--radius-shell); box-shadow: var(--shadow-soft); transition: width var(--motion-shell) var(--ease-natural), height var(--motion-shell) var(--ease-natural); }
+  .resize-error { position: absolute; inset: auto 8px 4px; background: var(--surface-raised); color: var(--status-error); font-size: 12px; padding: 4px 8px; border-radius: 6px; }
 </style>

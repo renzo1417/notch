@@ -24,7 +24,7 @@
   }
 </script>
 
-<div class="section-container" role="tabpanel" aria-label="General Settings">
+<div class="section-container" role="group" aria-label="General Settings">
   <!-- Launch with Windows -->
   <div class="setting-row">
     <div class="setting-info">
@@ -90,7 +90,7 @@
   <div class="setting-row">
     <div class="setting-info">
       <span class="setting-label">Auto-Collapse Delay</span>
-      <span class="setting-desc">Return to compact view after inactivity</span>
+      <span class="setting-desc">Collapse home after the pointer leaves.</span>
     </div>
     <div class="slider-group">
       <input
@@ -107,117 +107,3 @@
     </div>
   </div>
 </div>
-
-<style>
-  .section-container {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-    width: 100%;
-  }
-
-  .setting-row {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: var(--space-12);
-    padding: 6px 10px;
-    background: var(--surface-raised);
-    border: 1px solid var(--border-subtle);
-    border-radius: var(--radius-control);
-  }
-
-  .setting-info {
-    display: flex;
-    flex-direction: column;
-    gap: 2px;
-    min-width: 0;
-  }
-
-  .setting-label {
-    font-size: var(--font-size-label);
-    font-weight: 600;
-    color: var(--text-primary);
-    line-height: var(--line-height-tight);
-  }
-
-  .setting-desc {
-    font-size: var(--font-size-tiny);
-    color: var(--text-tertiary);
-    line-height: var(--line-height-tight);
-  }
-
-  /* Compact Windows Switch */
-  .win-switch {
-    width: 38px;
-    height: 20px;
-    border-radius: 9999px;
-    background: var(--surface-hover);
-    border: 1px solid var(--border-strong);
-    padding: 2px;
-    cursor: pointer;
-    position: relative;
-    transition: background-color var(--motion-micro) var(--ease-natural),
-                border-color var(--motion-micro) var(--ease-natural);
-    flex-shrink: 0;
-  }
-
-  .win-switch.checked {
-    background: var(--accent-primary);
-    border-color: var(--accent-primary);
-  }
-
-  .switch-thumb {
-    display: block;
-    width: 14px;
-    height: 14px;
-    border-radius: 50%;
-    background: white;
-    transform: translateX(0);
-    transition: transform var(--motion-micro) var(--ease-natural);
-  }
-
-  .win-switch.checked .switch-thumb {
-    transform: translateX(18px);
-  }
-
-  /* Select */
-  .win-select {
-    background: var(--surface-root);
-    color: var(--text-primary);
-    border: 1px solid var(--border-strong);
-    border-radius: 6px;
-    padding: 4px 8px;
-    font-size: var(--font-size-meta);
-    font-family: inherit;
-    cursor: pointer;
-    outline: none;
-    max-width: 200px;
-  }
-
-  .win-select:focus {
-    border-color: var(--accent-primary);
-  }
-
-  /* Slider */
-  .slider-group {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    flex-shrink: 0;
-  }
-
-  .win-slider {
-    width: 90px;
-    accent-color: var(--accent-primary);
-    cursor: pointer;
-  }
-
-  .slider-label {
-    font-size: var(--font-size-meta);
-    font-weight: 600;
-    color: var(--text-secondary);
-    min-width: 28px;
-    text-align: right;
-  }
-</style>

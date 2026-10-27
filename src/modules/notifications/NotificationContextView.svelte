@@ -11,7 +11,7 @@
   <div class="context-header">
     <span class="context-category">NOTIFICATION · COMPLETED</span>
     <div class="check-dot" aria-hidden="true">
-      <IconCheck size={9} color="#22c55e" />
+      <IconCheck size={9} color="var(--status-success)" />
     </div>
   </div>
   <div class="context-body">
@@ -57,7 +57,7 @@
     width: 13px;
     height: 13px;
     border-radius: 50%;
-    background-color: rgba(34, 197, 94, 0.15);
+    background-color: var(--surface-hover);
     flex-shrink: 0;
   }
 
@@ -69,7 +69,7 @@
   }
 
   .context-title {
-    font-size: var(--font-size-body);
+    font-size: var(--font-size-title);
     font-weight: 600;
     color: var(--text-primary);
     line-height: var(--line-height-tight);

@@ -1,0 +1,58 @@
+/* Shared tool surfaces keep navigation, sizing and contrast consistent. */
+.tool-panel { display: flex; flex-direction: column; width: 100%; height: 100%; min-height: 212px; min-width: 0; gap: 8px; padding: 0 4px; }
+.tool-panel .panel-header, .tool-panel .header-left, .tool-panel .header-actions { display: flex; align-items: center; gap: 8px; }
+.tool-panel .panel-header { justify-content: space-between; min-height: 36px; flex: none; }
+.tool-panel .panel-title { font-size: 14px; font-weight: 600; }
+.tool-panel .item-count, .tool-panel .app-count, .tool-panel .status-label { font-size: 12px; color: var(--text-secondary); }
+.tool-panel button { min-height: 32px; border-radius: 8px; transition: background-color var(--motion-micro) var(--ease-natural), transform var(--motion-micro) var(--ease-natural); }
+.tool-panel button:hover:not(:disabled) { background-color: var(--surface-hover); }
+.tool-panel button:active:not(:disabled) { transform: scale(.98); }
+.tool-panel .close-btn, .tool-panel .action-btn, .tool-panel .copy-btn, .tool-panel .reset-btn, .tool-panel .del-btn { display: inline-flex; align-items: center; justify-content: center; width: 32px; height: 32px; flex: none; color: var(--text-secondary); }
+.tool-panel .grid-container, .tool-panel .items-list, .tool-panel .panel-body { flex: 1; min-height: 0; overflow-y: auto; overflow-x: hidden; }
+.tool-panel .empty-state { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; height: 100%; min-height: 100px; text-align: center; color: var(--text-secondary); font-size: 12px; padding: 12px; }
+.tool-panel .empty-title { color: var(--text-primary); font-size: 13px; font-weight: 500; }
+.tool-panel .empty-meta { max-width: 30ch; }
+.tool-panel .danger { color: var(--status-error); }
+.tool-panel .panel-footer { display: flex; align-items: center; justify-content: center; border-top: 1px solid var(--border-subtle); padding-top: 4px; flex: none; }
+.tool-panel .add-app-btn, .tool-panel .add-folder-btn, .tool-panel .menu-item, .tool-panel .open-folder-btn, .tool-panel .header-toggle-btn, .tool-panel .alert-action-btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; padding: 4px 12px; color: var(--text-secondary); font-size: 12px; }
+.tool-panel .apps-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; }
+.tool-panel .app-tile { position: relative; min-width: 0; }
+.tool-panel .app-card { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; width: 100%; min-height: 80px; padding: 12px 4px; text-align: center; }
+.tool-panel .app-card.launching { opacity: .5; }
+.tool-panel .app-card.broken { color: var(--status-warning); }
+.tool-panel .app-icon-wrap { position: relative; display: flex; align-items: center; justify-content: center; width: 28px; height: 28px; }
+.tool-panel .app-icon { width: 28px; height: 28px; object-fit: contain; border-radius: 6px; }
+.tool-panel .app-name { display: block; min-width: 0; max-width: 100%; font-size: 12px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.tool-panel .app-options { display: flex; align-items: center; justify-content: center; position: absolute; right: 0; top: 0; width: 32px; color: var(--text-secondary); opacity: 0; }
+.tool-panel .app-tile:hover .app-options, .tool-panel .app-tile:focus-within .app-options { opacity: 1; }
+.tool-panel .app-options-row { display: flex; align-items: center; gap: 8px; border-top: 1px solid var(--border-subtle); flex: none; }
+.tool-panel .app-options-row > .app-name { flex: 1; }
+.tool-panel .broken-dot { position: absolute; bottom: 0; right: 0; width: 6px; height: 6px; border-radius: 50%; background: var(--status-warning); }
+.tool-panel .broken-alert { display: flex; align-items: center; gap: 4px; flex: none; border-bottom: 1px solid var(--border-subtle); }
+.tool-panel .broken-text { display: flex; align-items: center; gap: 6px; flex: 1; min-width: 0; color: var(--status-warning); font-size: 12px; }
+.tool-panel .broken-text span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.tool-panel .items-list { display: flex; flex-direction: column; }
+.tool-panel .item-card { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 8px; min-height: 48px; border-bottom: 1px solid var(--border-subtle); cursor: pointer; border-radius: 6px; flex: none; }
+.tool-panel .item-card:hover { background: var(--surface-hover); }
+.tool-panel .item-text { font-size: 13px; color: var(--text-primary); min-width: 0; flex: 1; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+.focus-panel .panel-body { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; min-height: 164px; }
+.focus-panel .presets-row, .focus-panel .controls-row, .focus-panel .custom-form { display: flex; align-items: center; gap: 8px; }
+.focus-panel .preset-btn, .focus-panel .custom-set-btn { padding: 4px 12px; color: var(--text-secondary); font-size: 12px; }
+.focus-panel .preset-btn.active { background: var(--surface-raised); color: var(--text-primary); }
+.focus-panel .time-digits { font-size: 36px; font-weight: 600; letter-spacing: -.025em; font-variant-numeric: tabular-nums; line-height: 1.2; }
+.focus-panel .main-action-btn { display: inline-flex; align-items: center; gap: 8px; padding: 6px 20px; background: var(--accent-primary); color: var(--on-accent); font-size: 13px; font-weight: 600; }
+.focus-panel .main-action-btn:hover:not(:disabled) { background: var(--accent-primary); opacity: .9; }
+.focus-panel .reset-btn { background: var(--surface-raised); }
+.focus-panel .custom-input { width: 64px; min-height: 32px; padding: 4px 8px; background: var(--surface-raised); color: var(--text-primary); border: 1px solid var(--border-strong); border-radius: 8px; }
+.focus-panel .custom-unit { font-size: 12px; color: var(--text-secondary); }
+.focus-panel .status-indicator { width: 6px; height: 6px; background: var(--text-secondary); border-radius: 50%; }
+.downloads-panel .folder-row { display: flex; align-items: center; gap: 8px; min-height: 44px; border-bottom: 1px solid var(--border-subtle); }
+.downloads-panel .folder-path { flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-size: 12px; }
+.downloads-panel .default-badge { font-size: 12px; color: var(--text-secondary); }
+.downloads-panel .active-download-card, .downloads-panel .completed-download-card { display: grid; gap: 12px; padding: 12px 4px; }
+.downloads-panel .download-info { display: flex; align-items: center; gap: 8px; min-width: 0; }
+.downloads-panel .file-name { min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-size: 13px; }
+.downloads-panel .progress-meta, .downloads-panel .completed-meta { font-size: 12px; color: var(--text-secondary); }
+.downloads-panel .progress-bar-wrap { height: 3px; background: var(--surface-active); border-radius: 2px; overflow: hidden; }
+.downloads-panel .progress-bar-fill { height: 100%; background: var(--accent-primary); }
+@media (max-width: 380px) { .tool-panel .apps-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); } }

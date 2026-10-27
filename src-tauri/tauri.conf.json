@@ -14,8 +14,8 @@
       {
         "label": "main",
         "title": "PROJECT_NOTCH",
-        "width": 332,
-        "height": 52,
+        "width": 336,
+        "height": 60,
         "resizable": false,
         "decorations": false,
         "transparent": true,

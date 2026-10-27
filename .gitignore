@@ -1,91 +1,121 @@
-# Dependencies & Package Managers
+# Node & Dependencies
 node_modules/
 .pnp
 .pnp.js
+.pnpm-store/
+.yarn/cache/
+.yarn/unplugged/
+.yarn/build-state.yml
+.yarn/install-state.gz
 
-# Production & Build Outputs
+# Frontend & Bundler Outputs
 dist/
 dist-ssr/
 build/
-coverage/
-.nyc_output/
-*.tsbuildinfo
-
-# Vite & Svelte Cache & Logs
 .vite/
 .svelte-kit/
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-pnpm-debug.log*
-*.log
+*.tsbuildinfo
 
-# Environment Variables & Local Overrides
-*.local
-.env
-.env.*
-!.env.example
-
-# Tauri 2 & Rust
+# Rust, Cargo & Tauri Build Artifacts
 target/
+**/target/
 src-tauri/target/
 src-tauri/gen/
 src-tauri/WixTools/
 **/*.rs.bk
-*.pdb
-*.dmp
+*.rs.bk
+Cargo.lock.orig
+
+# Windows Executables, Binaries & Packaging
 *.exe
 *.dll
 *.so
 *.dylib
+*.pdb
+*.exp
+*.lib
+*.ilk
+*.obj
 *.msi
+*.msix
+*.appinstaller
+*.cab
 *.wixobj
 *.wixpdb
 
-# Security, Signing Keys & Certificates
+# Visual Studio & Windows Native Tools
+.vs/
+*.suo
+*.user
+*.userosv
+*.sln.docstates
+*.ntvs*
+*.njsproj
+*.sln
+
+# WebView2 Runtime Artifacts
+EBWebView/
+WebView2/
+*.WebView2/
+
+# Environment Variables & Local Secrets
+*.local
+.env
+.env.*
+!.env.example
 *.pem
 *.pfx
 *.p12
 *.key
 *.crt
 *.cer
+*.keystore
 
-
-# IDE & Editor Configuration
+# IDEs & Editor Configuration
 .vscode/*
-!.vscode/extensions.json
 !.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+*.code-workspace
 .idea/
-*.suo
-*.ntvs*
-*.njsproj
-*.sln
+.history/
 *.sw?
+*.swp
+*.swo
+*~
 *.sublime-project
 *.sublime-workspace
+.cursor/
+.claude/
 
-# OS Generated
+# Operating System Files
 Thumbs.db
-[Dd]esktop.ini
-.DS_Store
+Thumbs.db:encryptable
 ehthumbs.db
 ehthumbs_vista.db
+[Dd]esktop.ini
 $RECYCLE.BIN/
+*.lnk
+.DS_Store
+.AppleDouble
+.LSOverride
+._*
+.Spotlight-V100
+.Trashes
+.directory
+.Trash-*
 
-# WebView2 Runtime Artifacts
-EBWebView/
-*.WebView2/
-
-# Workspace & Agent Scratch
+# AI Agents & IDE Tooling
 .agents/
 .gemini/
 
-# Local Runtime Data & Config
+# Application Local Runtime Data & State
+settings.json
 launcher_apps.json
 clipboard_history.json
 downloads_config.json
 watched_folders.json
-settings.json
 *.local.json
 *.bak
 *.corrupted.bak
@@ -96,14 +126,23 @@ settings.json
 *.download
 *.!ut
 
-# Test & Coverage Outputs
-test-results/
-.coverage/
-*.lcov
-
-# Crash Dumps & Diagnostic Logs
+# Logs & Diagnostics
+*.log
+*.log.*
+logs/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+crash.log
+minidump/
 *.dmp
 *.mdmp
-minidump/
-crash.log
 
+# Test & Coverage Outputs
+coverage/
+.coverage/
+.nyc_output/
+test-results/
+*.lcov

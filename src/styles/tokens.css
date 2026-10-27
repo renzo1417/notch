@@ -1,24 +1,30 @@
 :root {
   /* Surfaces */
-  --surface-root: rgba(12, 12, 13, 0.96);
-  --surface-raised: rgba(27, 27, 29, 0.96);
+  --surface-root: rgba(21, 22, 24, 0.96);
+  --surface-raised: #202226;
   --surface-hover: rgba(255, 255, 255, 0.07);
   --surface-active: rgba(255, 255, 255, 0.12);
 
   /* Typography Colors */
-  --text-primary: rgba(255, 255, 255, 0.96);
-  --text-secondary: rgba(255, 255, 255, 0.64);
-  --text-tertiary: rgba(255, 255, 255, 0.42);
+  --text-primary: #eceef1;
+  --text-secondary: #adb1b8;
+  --text-tertiary: #858a94;
 
   /* Borders & Shadows */
   --border-subtle: rgba(255, 255, 255, 0.08);
   --border-strong: rgba(255, 255, 255, 0.16);
   --shadow-soft: 0 8px 24px rgba(0, 0, 0, 0.30);
 
-  /* Accent (Restrained Windows Slate Blue) */
-  --accent-primary: #3b82f6;
-  --accent-muted: rgba(59, 130, 246, 0.15);
-  --accent-focus: rgba(59, 130, 246, 0.40);
+  /* Graphite selection; warnings and errors have separate semantic colors. */
+  --accent-primary: #d8dce2;
+  --accent-muted: rgba(216, 220, 226, 0.12);
+  --accent-focus: #d8dce2;
+
+  --on-accent: #151618;
+  --status-warning: #e4b46a;
+  --status-error: #df9191;
+  --status-success: var(--text-primary);
+  --status-info: var(--text-secondary);
 
   /* Radius System */
   --radius-shell: 18px;
@@ -36,11 +42,11 @@
 
   /* Typography Scale */
   --font-family: "Segoe UI Variable", "Segoe UI", Inter, system-ui, -apple-system, sans-serif;
-  --font-size-tiny: 10px;
-  --font-size-meta: 11px;
-  --font-size-label: 12px;
+  --font-size-tiny: 11px;
+  --font-size-meta: 12px;
+  --font-size-label: 13px;
   --font-size-body: 13px;
   --font-size-title: 14px;
-  --line-height-tight: 1.2;
+  --line-height-tight: 1.25;
   --line-height-normal: 1.4;
 }

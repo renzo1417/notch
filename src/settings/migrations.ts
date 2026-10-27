@@ -35,9 +35,6 @@ export function migrateSettings(raw: unknown): SettingsConfig {
 
   // Check version (0 = unversioned legacy or missing)
   const version = typeof data.schemaVersion === "number" ? data.schemaVersion : 0;
-  if (version < 1) {
-    // Migrate v0 legacy unversioned structure to v1 standard
-  }
 
   // 1. General section recovery
   if (data.general && typeof data.general === "object") {
@@ -119,6 +116,10 @@ export function migrateSettings(raw: unknown): SettingsConfig {
     result.performance.pauseInactiveAnimations =
       perf.pauseInactiveAnimations !== undefined ? Boolean(perf.pauseInactiveAnimations) : true;
     result.performance.targetFps = perf.targetFps === 30 ? 30 : 60;
+  }
+
+  if (version < 2 && result.appearance.accentColor.toLowerCase() === "#3b82f6") {
+    result.appearance.accentColor = DEFAULT_SETTINGS_CONFIG.appearance.accentColor;
   }
 
   // Advance schema version to current

@@ -1,3 +1,5 @@
+import { GRAPHITE, normalizeHex, accentForeground } from "../styles/palette.ts";
+import { SHELL_MOTION } from "../shell/shell-motion.ts";
 import { invoke } from "@tauri-apps/api/core";
 import { listen, type UnlistenFn } from "@tauri-apps/api/event";
 import {
@@ -22,6 +24,7 @@ class SettingsStore {
   availableMonitors = $state<MonitorInfo[]>([]);
   isLoading = $state<boolean>(false);
   isSaving = $state<boolean>(false);
+  saveError = $state("");
 
   private unlistenChanged: UnlistenFn | null = null;
   private saveTimeout: ReturnType<typeof setTimeout> | null = null;
@@ -85,22 +88,33 @@ class SettingsStore {
     const root = document.documentElement;
     const { appearance, performance } = cfg;
 
+    const palette = {
+      "--surface-raised": GRAPHITE.raised,
+      "--text-primary": GRAPHITE.text,
+      "--text-secondary": GRAPHITE.secondary,
+      "--status-warning": GRAPHITE.warning,
+      "--status-error": GRAPHITE.error,
+    };
+    for (const [token, value] of Object.entries(palette)) root.style.setProperty(token, value);
+
     // Accent color live update
-    root.style.setProperty("--accent-primary", appearance.accentColor);
-    root.style.setProperty("--accent-muted", `${appearance.accentColor}26`); // 15% opacity hex
-    root.style.setProperty("--accent-focus", `${appearance.accentColor}66`); // 40% opacity hex
+    root.style.setProperty("--accent-primary", normalizeHex(appearance.accentColor));
+    root.style.setProperty("--accent-muted", `${normalizeHex(appearance.accentColor)}26`); // 15% opacity hex
+    root.style.setProperty("--accent-focus", normalizeHex(appearance.accentColor)); // 40% opacity hex
+
+    root.style.setProperty("--on-accent", accentForeground(appearance.accentColor));
 
     // Opacity
-    root.style.setProperty("--surface-root", `rgba(12, 12, 13, ${appearance.opacity})`);
+    root.style.setProperty("--surface-root", `rgba(${GRAPHITE.surfaceRgb}, ${appearance.opacity})`);
 
     // Animation intensity & Reduced motion
-    const isReduced = appearance.reducedMotion || performance.batterySaverMode;
+    const isReduced = appearance.reducedMotion || performance.batterySaverMode || window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     const factor = isReduced ? 0 : appearance.animationIntensity;
 
-    root.style.setProperty("--motion-micro", `${Math.round(120 * factor)}ms`);
-    root.style.setProperty("--motion-shell", `${Math.round(220 * factor)}ms`);
-    root.style.setProperty("--motion-context", `${Math.round(180 * factor)}ms`);
-    root.style.setProperty("--motion-mascot", `${Math.round(350 * factor)}ms`);
+    root.style.setProperty("--motion-micro", `${Math.round(SHELL_MOTION.microMs * factor)}ms`);
+    root.style.setProperty("--motion-shell", `${Math.round(SHELL_MOTION.shellMs * factor)}ms`);
+    root.style.setProperty("--motion-context", `${Math.round(SHELL_MOTION.contextMs * factor)}ms`);
+    root.style.setProperty("--motion-mascot", `${Math.round(SHELL_MOTION.mascotMs * factor)}ms`);
   }
 
   /**
@@ -124,6 +138,8 @@ class SettingsStore {
       }
     }
 
+    this.saveError = "";
+
     // Debounce save to backend
     if (this.saveTimeout) {
       clearTimeout(this.saveTimeout);
@@ -137,6 +153,7 @@ class SettingsStore {
         });
         this.state = migrateSettings(saved);
       } catch (err) {
+        if ("__TAURI_INTERNALS__" in window) this.saveError = "Couldn’t save settings. Try again.";
         console.error("Failed to save settings to backend:", err);
       } finally {
         this.isSaving = false;

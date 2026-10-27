@@ -1,6 +1,6 @@
 # PROJECT_NOTCH — Design System & Tokens
 
-**Status:** Phase 0 Technical Foundation  
+**Status:** Graphite companion redesign
 **Reference Document:** [PRODUCT_SPEC.md](../PRODUCT_SPEC.md)
 
 ---
@@ -33,25 +33,25 @@ To maintain high visual craft, the following anti-patterns are strictly prohibit
 ### 3.1 Surface Palette
 ```css
 /* Dark theme base palette */
---surface-root: rgba(12, 12, 13, 0.96);     /* Main shell background */
---surface-raised: rgba(27, 27, 29, 0.96);   /* Elevated controls */
+--surface-root: rgba(21, 22, 24, 0.96);     /* Main shell background */
+--surface-raised: #202226;   /* Elevated controls */
 --surface-hover: rgba(255, 255, 255, 0.07); /* Hover states */
 --surface-active: rgba(255, 255, 255, 0.12);/* Active / pressed states */
 ```
 
 ### 3.2 Typography Colors
 ```css
---text-primary: rgba(255, 255, 255, 0.96);   /* Titles and main values */
---text-secondary: rgba(255, 255, 255, 0.64); /* Metadata, labels */
---text-tertiary: rgba(255, 255, 255, 0.42);  /* Status hints, dividers */
+--text-primary: #eceef1;   /* Titles and main values */
+--text-secondary: #adb1b8; /* Metadata, labels */
+--text-tertiary: #858a94;  /* Status hints, dividers */
 ```
 
 ### 3.3 Accent Color
 ```css
-/* Restrained Windows Slate Blue */
---accent-primary: #3b82f6;
---accent-muted: rgba(59, 130, 246, 0.15);
---accent-focus: rgba(59, 130, 246, 0.40);
+/* Graphite / soft silver */
+--accent-primary: #d8dce2;
+--accent-muted: rgba(216, 220, 226, 0.12);
+--accent-focus: #d8dce2;
 ```
 
 ### 3.4 Borders & Shadows
@@ -110,38 +110,23 @@ Reduced motion preferences (`prefers-reduced-motion: reduce`) clamp all timing v
 
 ---
 
-## 5. Three-Zone Expanded Layout Architecture
+## 5. Focused drawer layout
 
-The notch expanded shell (520px wide by 76px tall) is partitioned into three purposeful zones:
+| Surface | Logical size | Content |
+|---|---|---|
+| Compact | 304 × 44 | 32px Pip, immediate context, optional active-media indicator |
+| Home | 480 × 160 | 40px Pip, activity summary, available media controls, navigation |
+| Drawer | 480 × 328 | 56px companion header, full-width scrollable tool, navigation |
+| Settings | 640 × 456 | Appearance / Tools / System tabs, scrollable grouped settings |
 
-```text
-┌──────────────────────────────────────────────────────────────────┐
-│   LEFT (Mascot)   │       CENTER (Context)       │ RIGHT (Music) │
-│       ~96px       │            ~248px            │     176px     │
-└──────────────────────────────────────────────────────────────────┘
-```
+Use square top corners, 18px bottom corners, and 8px controls. Icons are normally 16px, with at least 32px hit areas. Apps use four columns; clipboard/download content uses flat rows and subtle separators. Pip uses the shared TypeScript palette: graphite chassis, dark visor, white eyes, amber warnings.
 
-### 5.1 Left Zone: Procedural Companion (~96px, 18–20% visual balance)
-- Houses procedural 2D Canvas companion "Pip" (64px canvas, 72px cell).
-- Interactive hover and click dynamics (squash, gaze tracking, mood reactions).
-- Separated optically by subtle vertical divider `--border-subtle`.
+`palette.ts` is shared by live appearance tokens and the canvas renderer. CSS provides matching startup defaults. Custom filled controls choose a contrasting foreground. Warning and error tokens remain separate from the configurable accent.
 
-### 5.2 Center Zone: Context Surface (~248px, 42–46% visual balance)
-- Flexible container (`flex: 1`, `min-width: 0`) resilient to long titles.
-- Strict typography scale:
-  - Header badge / context category: `10px` uppercase semibold (`--text-tertiary`).
-  - Primary title: `13px` semibold (`--text-primary`), single line ellipsis.
-  - Context detail: `11px` normal (`--text-secondary`), single line ellipsis.
-- Bounded on both sides with 1px `--border-subtle` dividers.
-- No fake charts, no cards-in-cards, no decorative blobs.
+## 6. Interaction and accessibility
 
-### 5.3 Right Zone: Media Module Placeholder (176px, 34–36% visual balance)
-- Fixed geometry: never resizes or jitters regardless of track status.
-- Left slot: 38×38px artwork container (`--surface-raised`, 8px radius, vector music icon).
-- Right slot: Truncated track title (12px semibold), artist/source (10px tertiary), and vector playback transport controls row (Previous, Play/Pause, Next) subdued when idle.
+Click opens home; hover only changes Pip's expression. More opens an inline drawer, so secondary navigation cannot clip outside the shell. Back/Escape closes one level and restores focus. Explicit drawers do not react to background context navigation. Warnings/completions update only the header.
 
-### 5.4 Compact Surface (300px × 38px)
-- Left: Mini mascot avatar (26×26px canvas).
-- Center: Immediate status summary (`--font-size-label` semibold).
-- Right: Subdued 13px vector music indicator.
+Use native buttons, visible focus indicators, keyboard tabs with arrow navigation, and a focus-contained settings dialog. Running countdowns are not live-announced every second. Honor both the OS reduced-motion preference and the app setting for CSS and Pip.
 
+Keep 16px transparent margins at each side and below. Grow native bounds first; shrink after the effective transition. Clamp to monitor logical dimensions and scroll constrained content.

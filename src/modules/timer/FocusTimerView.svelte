@@ -178,7 +178,7 @@
           title="Start focus countdown ({timer.presetMinutes}m)"
           aria-label="Start timer"
         >
-          <IconPlay size={10} color="#0c0c0d" />
+          <IconPlay size={10} color="var(--on-accent)" />
           <span>Start</span>
         </button>
       {:else if timer.isPaused}
@@ -189,7 +189,7 @@
           title="Resume timer"
           aria-label="Resume timer"
         >
-          <IconPlay size={10} color="#0c0c0d" />
+          <IconPlay size={10} color="var(--on-accent)" />
           <span>Resume</span>
         </button>
         <button
@@ -271,11 +271,11 @@
   }
 
   .focus-dot.running {
-    background-color: #2dd4bf; /* Ice teal matching Pip's focused visor */
+    background-color: var(--text-primary); /* Ice teal matching Pip's focused visor */
   }
 
   .focus-dot.paused {
-    background-color: #f59e0b; /* Amber */
+    background-color: var(--status-warning); /* Amber */
   }
 
   .presets-row {
@@ -304,8 +304,8 @@
 
   .preset-pill.active {
     background-color: var(--surface-raised);
-    border-color: rgba(45, 212, 191, 0.4);
-    color: #2dd4bf;
+    border-color: var(--surface-hover);
+    color: var(--text-primary);
     font-weight: 600;
   }
 
@@ -345,7 +345,7 @@
   }
 
   .timer-readout {
-    font-size: 18px;
+    font-size: 20px;
     font-weight: 700;
     letter-spacing: 0.5px;
     color: var(--text-primary);
@@ -355,7 +355,7 @@
   }
 
   .timer-readout.paused {
-    color: #f59e0b;
+    color: var(--status-warning);
     opacity: 0.9;
   }
 
@@ -367,7 +367,7 @@
 
   .custom-input {
     width: 44px;
-    height: 22px;
+    height: 24px;
     background: var(--surface-raised);
     border: 1px solid var(--border-strong);
     border-radius: 4px;
@@ -381,7 +381,7 @@
   }
 
   .custom-input:focus {
-    border-color: #2dd4bf;
+    border-color: var(--text-primary);
   }
 
   .custom-unit {
@@ -400,8 +400,8 @@
     align-items: center;
     justify-content: center;
     gap: 4px;
-    height: 22px;
-    padding: 0 8px;
+    height: 24px;
+    padding: 0 10px;
     border-radius: 5px;
     font-size: var(--font-size-meta);
     font-weight: 600;
@@ -417,12 +417,12 @@
   }
 
   .primary-btn {
-    background-color: #2dd4bf;
-    color: #0c0c0d;
+    background-color: var(--text-primary);
+    color: var(--on-accent);
   }
 
   .primary-btn:hover {
-    background-color: #5eead4;
+    background-color: var(--accent-primary);
   }
 
   .secondary-btn {
@@ -436,8 +436,8 @@
   }
 
   .reset-btn {
-    width: 22px;
-    height: 22px;
+    width: 24px;
+    height: 24px;
     padding: 0;
     background-color: transparent;
     border: 1px solid var(--border-subtle);

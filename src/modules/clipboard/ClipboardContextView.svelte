@@ -116,7 +116,7 @@
           aria-label="Copy text to clipboard"
         >
           {#if activeItem && clipboardStore.copiedId === activeItem.id}
-            <IconCheck size={11} color="#22c55e" />
+            <IconCheck size={11} color="var(--status-success)" />
             <span>Copied</span>
           {:else}
             <IconCopy size={11} color="var(--text-primary)" />
@@ -214,7 +214,7 @@
   }
 
   .icon-btn.active {
-    background-color: rgba(239, 68, 68, 0.15);
+    background-color: var(--surface-hover);
   }
 
   .clipboard-body {
@@ -264,7 +264,7 @@
 
   .item-text {
     display: block;
-    font-size: var(--font-size-meta);
+    font-size: var(--font-size-label);
     font-weight: 500;
     color: var(--text-primary);
     white-space: nowrap;
@@ -276,11 +276,11 @@
   .copy-btn {
     display: inline-flex;
     align-items: center;
-    gap: 3px;
+    gap: 4px;
     background: rgba(255, 255, 255, 0.08);
     border: 1px solid var(--border-subtle);
     border-radius: 4px;
-    padding: 1px 6px;
+    padding: 2px 8px;
     font-size: var(--font-size-tiny);
     font-weight: 500;
     color: var(--text-primary);
@@ -295,8 +295,8 @@
   }
 
   .copy-btn.copied {
-    border-color: rgba(34, 197, 94, 0.4);
-    color: #22c55e;
+    border-color: var(--surface-hover);
+    color: var(--status-success);
   }
 
   .recent-strip {
@@ -310,11 +310,11 @@
   .strip-pill {
     flex: 1;
     min-width: 0;
-    max-width: 58px;
+    max-width: 64px;
     background: transparent;
     border: 1px solid var(--border-subtle);
     border-radius: 3px;
-    padding: 1px 4px;
+    padding: 1px 5px;
     cursor: pointer;
     text-align: left;
     transition: all var(--motion-micro) var(--ease-natural);
@@ -331,7 +331,7 @@
 
   .strip-text {
     display: block;
-    font-size: 9px;
+    font-size: 10px;
     color: var(--text-secondary);
     white-space: nowrap;
     overflow: hidden;
@@ -340,7 +340,7 @@
   }
 
   .more-count {
-    font-size: 9px;
+    font-size: 10px;
     color: var(--text-tertiary);
     flex-shrink: 0;
     padding: 0 2px;

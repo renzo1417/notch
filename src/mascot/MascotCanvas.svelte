@@ -32,19 +32,23 @@
   let unsubMascot: (() => void) | null = null;
 
   let initialRenderDone = false;
+  let systemReducedMotion = $state(false);
 
   const mascotConfig = $derived(settingsStore.state.mascot);
   const perfConfig = $derived(settingsStore.state.performance);
   const appearanceConfig = $derived(settingsStore.state.appearance);
 
+  const effectiveIntensity = $derived(
+    appearanceConfig.reducedMotion || perfConfig.batterySaverMode || systemReducedMotion
+      ? 0 : appearanceConfig.animationIntensity * mascotConfig.animationIntensity
+  );
+
   $effect(() => {
     if (stateMachine) {
-      const reduced = appearanceConfig.reducedMotion || perfConfig.batterySaverMode;
-      const intensity = reduced ? 0 : mascotConfig.animationIntensity;
       stateMachine.setConfig({
         enabled: mascotConfig.enabled,
         trackCursor: mascotConfig.cursorTracking,
-        animationIntensity: intensity,
+        animationIntensity: effectiveIntensity,
         pauseInactiveAnimation: perfConfig.pauseInactiveAnimations,
       });
 
@@ -92,7 +96,7 @@
       const ctx = canvasElement.getContext("2d");
       if (ctx) {
         const dpr = window.devicePixelRatio || 1;
-        const renderScale = compact ? size / 64 : 1.0;
+        const renderScale = (compact ? size : size) / 64;
 
         renderer.render({
           ctx,
@@ -179,11 +183,15 @@
   }
 
   onMount(() => {
+    const preference = window.matchMedia("(prefers-reduced-motion: reduce)");
+    const updatePreference = () => { systemReducedMotion = preference.matches; };
+    updatePreference();
+    preference.addEventListener("change", updatePreference);
     renderer = new MascotRenderer();
     stateMachine = new MascotStateMachine({
       enabled: mascotConfig.enabled,
       trackCursor: mascotConfig.cursorTracking,
-      animationIntensity: mascotConfig.animationIntensity,
+      animationIntensity: effectiveIntensity,
       pauseInactiveAnimation: perfConfig.pauseInactiveAnimations,
     }, updateAriaState);
 
@@ -199,6 +207,7 @@
     if (mascotConfig.enabled && isWindowVisible) {
       animationFrameId = requestAnimationFrame(renderFrame);
     }
+    return () => preference.removeEventListener("change", updatePreference);
   });
 
   onDestroy(() => {
@@ -237,7 +246,8 @@
     </button>
   {:else}
     <div
-      class="mascot-container compact"
+      class="mascot-container"
+      class:compact={compact}
       role="img"
       aria-label="Desktop companion Pip mini avatar"
     >

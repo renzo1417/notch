@@ -25,7 +25,7 @@
   }
 </script>
 
-<div class="section-container" role="tabpanel" aria-label="Downloads Settings">
+<div class="section-container" role="group" aria-label="Downloads Settings">
   <!-- Enable Downloads -->
   <div class="setting-row">
     <div class="setting-info">
@@ -79,7 +79,7 @@
         onclick={handleAddFolder}
         title="Add folder to watch list"
       >
-        <IconPlus size={12} color="currentColor" />
+        <IconPlus size={16} color="currentColor" />
         <span>Add Folder</span>
       </button>
     </div>
@@ -92,7 +92,7 @@
       {:else}
         {#each folders as folder (folder.id)}
           <div class="folder-item">
-            <IconFolder size={14} color="var(--accent-primary)" />
+            <IconFolder size={16} color="var(--accent-primary)" />
             <span class="folder-path" title={folder.path}>{folder.path}</span>
             <button
               type="button"
@@ -101,7 +101,7 @@
               aria-label="Remove watched folder"
               onclick={() => handleRemoveFolder(folder.id)}
             >
-              <IconTrash size={12} color="var(--text-tertiary)" />
+              <IconTrash size={16} color="var(--text-tertiary)" />
             </button>
           </div>
         {/each}
@@ -109,167 +109,3 @@
     </div>
   </div>
 </div>
-
-<style>
-  .section-container {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-    width: 100%;
-  }
-
-  .setting-row {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: var(--space-12);
-    padding: 6px 10px;
-    background: var(--surface-raised);
-    border: 1px solid var(--border-subtle);
-    border-radius: var(--radius-control);
-    transition: opacity var(--motion-micro) var(--ease-natural);
-  }
-
-  .setting-row.disabled,
-  .folder-group.disabled {
-    opacity: 0.5;
-    pointer-events: none;
-  }
-
-  .setting-info {
-    display: flex;
-    flex-direction: column;
-    gap: 2px;
-    min-width: 0;
-  }
-
-  .setting-label {
-    font-size: var(--font-size-label);
-    font-weight: 600;
-    color: var(--text-primary);
-    line-height: var(--line-height-tight);
-  }
-
-  .setting-desc {
-    font-size: var(--font-size-tiny);
-    color: var(--text-tertiary);
-    line-height: var(--line-height-tight);
-  }
-
-  .folder-group {
-    display: flex;
-    flex-direction: column;
-    gap: 6px;
-    padding: 8px 10px;
-    background: var(--surface-raised);
-    border: 1px solid var(--border-subtle);
-    border-radius: var(--radius-control);
-  }
-
-  .folder-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-  }
-
-  .add-folder-btn {
-    display: inline-flex;
-    align-items: center;
-    gap: 4px;
-    padding: 3px 8px;
-    background: var(--surface-root);
-    border: 1px solid var(--border-strong);
-    border-radius: 6px;
-    color: var(--text-primary);
-    font-size: var(--font-size-meta);
-    font-weight: 500;
-    cursor: pointer;
-    transition: background-color var(--motion-micro) var(--ease-natural);
-  }
-
-  .add-folder-btn:hover:not(:disabled) {
-    background: var(--surface-hover);
-  }
-
-  .folder-list {
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-    max-height: 80px;
-    overflow-y: auto;
-  }
-
-  .folder-item {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    background: var(--surface-root);
-    border: 1px solid var(--border-subtle);
-    border-radius: 4px;
-    padding: 4px 8px;
-  }
-
-  .folder-path {
-    flex: 1;
-    min-width: 0;
-    font-size: var(--font-size-meta);
-    color: var(--text-secondary);
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-  }
-
-  .remove-folder-btn {
-    background: transparent;
-    border: none;
-    cursor: pointer;
-    padding: 2px;
-    border-radius: 4px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-  }
-
-  .remove-folder-btn:hover {
-    background: rgba(239, 68, 68, 0.2);
-  }
-
-  .empty-folders {
-    font-size: var(--font-size-tiny);
-    color: var(--text-tertiary);
-    padding: 4px 0;
-  }
-
-  .win-switch {
-    width: 38px;
-    height: 20px;
-    border-radius: 9999px;
-    background: var(--surface-hover);
-    border: 1px solid var(--border-strong);
-    padding: 2px;
-    cursor: pointer;
-    position: relative;
-    transition: background-color var(--motion-micro) var(--ease-natural),
-                border-color var(--motion-micro) var(--ease-natural);
-    flex-shrink: 0;
-  }
-
-  .win-switch.checked {
-    background: var(--accent-primary);
-    border-color: var(--accent-primary);
-  }
-
-  .switch-thumb {
-    display: block;
-    width: 14px;
-    height: 14px;
-    border-radius: 50%;
-    background: white;
-    transform: translateX(0);
-    transition: transform var(--motion-micro) var(--ease-natural);
-  }
-
-  .win-switch.checked .switch-thumb {
-    transform: translateX(18px);
-  }
-</style>

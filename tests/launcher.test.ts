@@ -6,7 +6,7 @@ import {
   ContextEngine,
   type ContextCandidate,
 } from "../src/app/state/context-engine.ts";
-import { shellActions } from "../src/app/state/shell-state.ts";
+import { shellActions, SHELL_STATE_DIMENSIONS } from "../src/app/state/shell-state.ts";
 import { MAX_PINNED_BEFORE_OVERFLOW, type LaunchableApp } from "../src/modules/launcher/types.ts";
 
 test("Launcher Model: maintains strict separation of executable path and argument array", () => {
@@ -182,4 +182,19 @@ test("Shell Actions: requestCollapse dispatches collapse notification to subscri
   shellActions.requestCollapse();
   assert.equal(collapseTriggered, true, "requestCollapse must trigger subscriber callback");
   unsub();
+});
+
+test("Shell dimensions reserve shadow margins and give every drawer full width", () => {
+  assert.equal(SHELL_STATE_DIMENSIONS.compact.width, 304);
+  assert.equal(SHELL_STATE_DIMENSIONS.compact.height, 44);
+  assert.equal(SHELL_STATE_DIMENSIONS.expanded.width, 480);
+  assert.equal(SHELL_STATE_DIMENSIONS.expanded.height, 160);
+  for (const state of ["apps", "focus", "clipboard", "downloads", "battery", "utilities"] as const) {
+    assert.equal(SHELL_STATE_DIMENSIONS[state].width, 480);
+    assert.equal(SHELL_STATE_DIMENSIONS[state].height, 328);
+  }
+  for (const dimensions of Object.values(SHELL_STATE_DIMENSIONS)) {
+    assert.equal(dimensions.windowWidth - dimensions.width, 32);
+    assert.equal(dimensions.windowHeight - dimensions.height, 16);
+  }
 });

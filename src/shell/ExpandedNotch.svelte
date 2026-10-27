@@ -1,355 +1,95 @@
 <script lang="ts">
-  import { onMount, onDestroy } from "svelte";
+  import { onMount } from "svelte";
   import MascotCanvas from "../mascot/MascotCanvas.svelte";
+  import ActivitySummary from "./ActivitySummary.svelte";
   import MusicModule from "../modules/music/MusicModule.svelte";
-  import CodingContextView from "../modules/coding/CodingContextView.svelte";
-  import FocusTimerView from "../modules/timer/FocusTimerView.svelte";
-  import NotificationContextView from "../modules/notifications/NotificationContextView.svelte";
-  import LauncherDockView from "../modules/launcher/LauncherDockView.svelte";
-  import ClipboardContextView from "../modules/clipboard/ClipboardContextView.svelte";
+  import AppsPanel from "../modules/launcher/AppsPanel.svelte";
+  import FocusTimerPanel from "../modules/timer/FocusTimerPanel.svelte";
+  import ClipboardPanel from "../modules/clipboard/ClipboardPanel.svelte";
+  import DownloadsPanel from "../modules/downloads/DownloadsPanel.svelte";
   import BatteryContextView from "../modules/battery/BatteryContextView.svelte";
-  import DownloadContextView from "../modules/downloads/DownloadContextView.svelte";
-  import { timerStore } from "../modules/timer/timer-store.svelte";
-  import { launcherStore } from "../modules/launcher/launcher-store.svelte";
-  import { clipboardStore } from "../modules/clipboard/clipboard-store.svelte";
+  import { contextEngine, type ContextCandidate } from "../app/state/context-engine";
   import { batteryStore } from "../modules/battery/battery-store.svelte";
-  import { downloadsStore } from "../modules/downloads/downloads-store.svelte";
+  import { settingsStore } from "../settings/settings-store.svelte";
   import IconTimer from "../icons/IconTimer.svelte";
   import IconApp from "../icons/IconApp.svelte";
   import IconClipboard from "../icons/IconClipboard.svelte";
-  import IconBattery from "../icons/IconBattery.svelte";
   import IconDownload from "../icons/IconDownload.svelte";
+  import IconBattery from "../icons/IconBattery.svelte";
   import IconSettings from "../icons/IconSettings.svelte";
-  import { contextEngine, type ContextCandidate } from "../app/state/context-engine";
-  import type { MascotState } from "../mascot/types";
-
-  interface Props {
-    backendConnected: boolean;
-    onOpenSettings?: () => void;
-  }
-
-  let { backendConnected, onOpenSettings }: Props = $props();
-
-  let mascotState = $state<MascotState>("idle");
-  let activeCandidate = $state<ContextCandidate>(contextEngine.current);
-  let unsubContext: (() => void) | null = null;
-
-  function handleMascotStateChange(newState: MascotState) {
-    mascotState = newState;
-  }
-
-  onMount(() => {
-    unsubContext = contextEngine.subscribe((cand) => {
-      activeCandidate = cand;
-    });
-  });
-
-  onDestroy(() => {
-    if (unsubContext) {
-      unsubContext();
-    }
-  });
+  import IconMoreHorizontal from "../icons/IconMoreHorizontal.svelte";
+  import IconChevronLeft from "../icons/IconChevronLeft.svelte";
+  import IconChevronRight from "../icons/IconChevronRight.svelte";
+  import type { NotchShellState } from "../app/state/shell-state";
+  let { shellState, onStateChange, onback, oncollapse }: {
+    shellState: NotchShellState;
+    onStateChange: (state: NotchShellState) => void;
+    onback: () => void;
+    oncollapse: () => void;
+  } = $props();
+  let candidate = $state<ContextCandidate>(contextEngine.current);
+  onMount(() => contextEngine.subscribe((value) => { candidate = value; }));
+  const isHome = $derived(shellState === "expanded");
+  const panelTitle = $derived(shellState === "utilities" ? "More tools" : shellState === "focus" ? "Focus" : shellState.charAt(0).toUpperCase() + shellState.slice(1));
+  function toggle(state: NotchShellState) { onStateChange(shellState === state ? "expanded" : state); }
 </script>
 
-<div class="expanded-three-zone" aria-label="Expanded Notch View · Context: {activeCandidate.mode} · Companion state: {mascotState}">
-  <!-- LEFT ZONE: Procedural Mascot (Pip) -->
-  <div class="zone left-zone" aria-label="Companion zone">
-    <MascotCanvas
-      size={64}
-      compact={false}
-      interactive={true}
-      onStateChange={handleMascotStateChange}
-    />
-  </div>
+<div class="expanded-layout">
+  <header class="companion-header">
+    {#if !isHome}<button type="button" class="icon-button back" onclick={onback} aria-label="Back to home" title="Back to home (Esc)"><IconChevronLeft size={16} /></button>{/if}
+    {#if settingsStore.state.mascot.enabled}<MascotCanvas size={40} interactive />{/if}
+    <div class="header-summary" aria-live={candidate.priority <= 1 ? "polite" : "off"}><ActivitySummary compact={!isHome} /></div>
+    {#if !isHome}<MusicModule mini />{/if}
+    {#if isHome}<button type="button" class="icon-button collapse" onclick={oncollapse} aria-label="Collapse notch" title="Collapse (Esc)" data-focus="collapse"><span aria-hidden="true">−</span></button>{/if}
+  </header>
 
-  <!-- CENTER ZONE: Context Surface -->
-  <div class="zone center-zone" aria-label="Context surface: {activeCandidate.mode}">
-    {#if activeCandidate.mode === "notification"}
-      <NotificationContextView />
-    {:else if activeCandidate.mode === "download"}
-      <DownloadContextView />
-    {:else if activeCandidate.mode === "launcher"}
-      <LauncherDockView />
-    {:else if activeCandidate.mode === "clipboard"}
-      <ClipboardContextView />
-    {:else if activeCandidate.mode === "battery"}
-      <BatteryContextView />
-    {:else if activeCandidate.mode === "timer"}
-      <FocusTimerView />
-    {:else if activeCandidate.mode === "coding"}
-      <CodingContextView />
-    {:else}
-      <!-- Default Idle Surface -->
-      <div class="context-container">
-        <div class="context-header">
-          <span class="context-category">DESKTOP COMPANION · {mascotState.toUpperCase()}</span>
-          <div
-            class="status-dot"
-            class:connected={backendConnected}
-            title={backendConnected ? "Native backend connected" : "Connecting to backend..."}
-            aria-hidden="true"
-          ></div>
+  {#if isHome}
+    <div class="home-media"><MusicModule /></div>
+  {:else}
+    <div class="drawer-body" role="region" aria-label={panelTitle} tabindex="-1" data-panel-focus>
+      {#if shellState === "apps"}<AppsPanel onclose={onback} />
+      {:else if shellState === "focus"}<FocusTimerPanel onclose={onback} />
+      {:else if shellState === "clipboard"}<ClipboardPanel onclose={onback} />
+      {:else if shellState === "downloads"}<DownloadsPanel onclose={onback} />
+      {:else if shellState === "battery"}<BatteryContextView onclose={onback} />
+      {:else if shellState === "utilities"}
+        <h2>More tools</h2>
+        <div class="utility-list">
+          <button type="button" onclick={() => onStateChange("clipboard")}><IconClipboard size={16} /><span>Clipboard</span><IconChevronRight size={16} /></button>
+          <button type="button" onclick={() => onStateChange("downloads")}><IconDownload size={16} /><span>Downloads</span><IconChevronRight size={16} /></button>
+          {#if batteryStore.hasBattery}<button type="button" onclick={() => onStateChange("battery")}><IconBattery size={16} /><span>Battery</span><span class="utility-value">{batteryStore.formattedPercent}</span><IconChevronRight size={16} /></button>{/if}
+          <button type="button" onclick={() => onStateChange("settings")}><IconSettings size={16} /><span>Settings</span><IconChevronRight size={16} /></button>
         </div>
-        <div class="context-body">
-          <div class="idle-title-row">
-            <span class="context-title" title="Windows Notch Active">Windows Notch Active</span>
-            <div class="idle-quick-actions">
-              <button
-                type="button"
-                class="quick-action-trigger"
-                onclick={(e) => {
-                  e.stopPropagation();
-                  launcherStore.openLauncherSurface();
-                }}
-                title="Open Apps Dock"
-                aria-label="Open Apps Dock"
-              >
-                <IconApp size={10} color="var(--text-secondary)" />
-                <span>Apps</span>
-              </button>
-              <button
-                type="button"
-                class="quick-action-trigger"
-                onclick={(e) => {
-                  e.stopPropagation();
-                  timerStore.openTimerSurface();
-                }}
-                title="Open Focus Timer"
-                aria-label="Open Focus Timer"
-              >
-                <IconTimer size={10} color="var(--text-secondary)" />
-                <span>Focus</span>
-              </button>
-              <button
-                type="button"
-                class="quick-action-trigger"
-                onclick={(e) => {
-                  e.stopPropagation();
-                  clipboardStore.openClipboardSurface();
-                }}
-                title="Open Clipboard History"
-                aria-label="Open Clipboard History"
-              >
-                <IconClipboard size={10} color="var(--text-secondary)" />
-                <span>Clip</span>
-              </button>
-              <button
-                type="button"
-                class="quick-action-trigger"
-                class:low-battery={batteryStore.isLowBattery}
-                onclick={(e) => {
-                  e.stopPropagation();
-                  batteryStore.openBatterySurface();
-                }}
-                title="Open Battery Details ({batteryStore.statusSummary})"
-                aria-label="Open Battery Details"
-              >
-                <IconBattery
-                  size={10}
-                  color={batteryStore.isLowBattery ? "#ef4444" : "var(--text-secondary)"}
-                  charging={batteryStore.isCharging}
-                  level={batteryStore.percentage}
-                />
-                <span>{batteryStore.formattedPercent}</span>
-              </button>
-              <button
-                type="button"
-                class="quick-action-trigger"
-                class:active-dl={downloadsStore.hasActiveDownload}
-                onclick={(e) => {
-                  e.stopPropagation();
-                  downloadsStore.openDownloadSurface();
-                }}
-                title={downloadsStore.hasActiveDownload ? `Downloading: ${downloadsStore.activeDownload?.fileName}` : "Downloads & Watched Folders"}
-                aria-label="Open Downloads Surface"
-              >
-                <IconDownload
-                  size={10}
-                  color={downloadsStore.hasActiveDownload ? "#38bdf8" : "var(--text-secondary)"}
-                />
-                <span>DL</span>
-              </button>
-              <button
-                type="button"
-                class="quick-action-trigger"
-                onclick={(e) => {
-                  e.stopPropagation();
-                  onOpenSettings?.();
-                }}
-                title="Open Settings (Esc to close)"
-                aria-label="Open Settings"
-              >
-                <IconSettings size={10} color="var(--text-secondary)" />
-                <span>Set</span>
-              </button>
-            </div>
-          </div>
-          <span class="context-meta" title="Quiet desktop companion layer">Quiet top-center companion layer</span>
-        </div>
-      </div>
-    {/if}
-  </div>
+      {/if}
+    </div>
+  {/if}
 
-  <!-- RIGHT ZONE: Media Module (Anchored ~176px fixed geometry) -->
-  <div class="zone right-zone" aria-label="Music player zone">
-    <MusicModule />
-  </div>
-
+  <nav class="primary-nav" aria-label="Notch tools">
+    {#if settingsStore.state.apps.quickDockEnabled}<button type="button" class:active={shellState === "apps"} aria-pressed={shellState === "apps"} onclick={() => toggle("apps")} data-focus="apps"><IconApp size={16} /><span>Apps</span></button>{/if}
+    <button type="button" class:active={shellState === "focus"} aria-pressed={shellState === "focus"} onclick={() => toggle("focus")} data-focus="focus"><IconTimer size={16} /><span>Focus</span></button>
+    <button type="button" class:active={!["apps", "focus", "expanded"].includes(shellState)} aria-pressed={!["apps", "focus", "expanded"].includes(shellState)} onclick={() => toggle("utilities")} data-focus="more"><IconMoreHorizontal size={16} /><span>More</span></button>
+  </nav>
 </div>
 
 <style>
-  .expanded-three-zone {
-    display: flex;
-    align-items: center;
-    width: 100%;
-    height: 100%;
-    user-select: none;
-    box-sizing: border-box;
-  }
-
-  .zone {
-    height: 100%;
-    display: flex;
-    align-items: center;
-    box-sizing: border-box;
-  }
-
-  /* LEFT: Mascot Zone (18-20% visual balance ~ 96px) */
-  .left-zone {
-    width: 96px;
-    justify-content: center;
-    flex-shrink: 0;
-    padding: 0 var(--space-8);
-  }
-
-  /* CENTER: Context Surface (42-46% visual balance ~ 248px) */
-  .center-zone {
-    flex: 1;
-    min-width: 0; /* Enable text truncation */
-    padding: 0 var(--space-12);
-    border-left: 1px solid var(--border-subtle);
-    border-right: 1px solid var(--border-subtle);
-    justify-content: flex-start;
-  }
-
-  .context-container {
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    gap: 2px;
-    width: 100%;
-    min-width: 0;
-  }
-
-  .context-header {
-    display: flex;
-    align-items: center;
-    gap: var(--space-6);
-  }
-
-  .context-category {
-    font-size: var(--font-size-tiny);
-    font-weight: 600;
-    letter-spacing: 0.6px;
-    color: var(--text-tertiary);
-    text-transform: uppercase;
-    line-height: var(--line-height-tight);
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-  }
-
-  .status-dot {
-    width: 5px;
-    height: 5px;
-    border-radius: 50%;
-    background-color: var(--text-tertiary);
-    transition: background-color var(--motion-micro) var(--ease-natural);
-    flex-shrink: 0;
-  }
-
-  .status-dot.connected {
-    background-color: #22c55e;
-  }
-
-  .context-body {
-    display: flex;
-    flex-direction: column;
-    gap: 1px;
-    min-width: 0;
-  }
-
-  .idle-title-row {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: var(--space-8);
-    min-width: 0;
-  }
-
-  .context-title {
-    font-size: var(--font-size-body);
-    font-weight: 600;
-    color: var(--text-primary);
-    line-height: var(--line-height-tight);
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-  }
-
-  .idle-quick-actions {
-    display: flex;
-    align-items: center;
-    gap: 4px;
-    flex-shrink: 0;
-  }
-
-  .quick-action-trigger {
-    display: inline-flex;
-    align-items: center;
-    gap: 3px;
-    background: var(--surface-raised);
-    border: 1px solid var(--border-subtle);
-    border-radius: 4px;
-    padding: 1px 5px;
-    font-size: var(--font-size-tiny);
-    font-weight: 500;
-    color: var(--text-secondary);
-    cursor: pointer;
-    line-height: 1.2;
-    transition: all var(--motion-micro) var(--ease-natural);
-    flex-shrink: 0;
-  }
-
-  .quick-action-trigger:hover {
-    background-color: var(--surface-hover);
-    color: var(--text-primary);
-    border-color: rgba(255, 255, 255, 0.2);
-  }
-
-  .quick-action-trigger.low-battery {
-    border-color: rgba(239, 68, 68, 0.4);
-    color: #ef4444;
-  }
-
-  .quick-action-trigger.active-dl {
-    border-color: rgba(56, 189, 248, 0.4);
-    color: #38bdf8;
-  }
-
-  .context-meta {
-    font-size: var(--font-size-meta);
-    color: var(--text-secondary);
-    line-height: var(--line-height-tight);
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-  }
-
-  /* RIGHT: Music Module Zone (~176px stable geometry) */
-  .right-zone {
-    width: 176px;
-    flex-shrink: 0;
-    justify-content: flex-end;
-  }
+  .expanded-layout { display: flex; flex-direction: column; width: 100%; height: 100%; min-height: 0; }
+  .companion-header { display: flex; align-items: center; gap: 8px; padding: 8px 16px; min-height: 56px; flex: none; }
+  .header-summary { min-width: 0; flex: 1; }
+  .icon-button { display: flex; align-items: center; justify-content: center; width: 32px; height: 32px; flex: none; border-radius: 8px; color: var(--text-secondary); }
+  .icon-button:hover { background: var(--surface-hover); color: var(--text-primary); }
+  .collapse span { font-size: 20px; line-height: 1; }
+  .home-media { padding: 0 20px 8px; display: flex; align-items: center; min-height: 0; flex: 1; }
+  .drawer-body { flex: 1; min-height: 0; overflow-y: auto; overflow-x: hidden; padding: 0 16px 8px; outline: none; animation: content-in var(--motion-context) var(--ease-natural); }
+  .drawer-body:focus-visible { outline: 2px solid var(--accent-focus); outline-offset: -2px; border-radius: 8px; }
+  h2 { font-size: 14px; font-weight: 600; margin: 8px 8px 6px; }
+  .utility-list { display: grid; }
+  .utility-list button { display: flex; align-items: center; gap: 12px; min-height: 40px; padding: 4px 8px; border-radius: 8px; color: var(--text-secondary); text-align: left; }
+  .utility-list button:hover { background: var(--surface-hover); color: var(--text-primary); }
+  .utility-list button > span:first-of-type { flex: 1; color: var(--text-primary); }
+  .utility-value { font-size: 12px; font-variant-numeric: tabular-nums; }
+  .primary-nav { display: flex; align-items: center; justify-content: center; gap: 16px; border-top: 1px solid var(--border-subtle); padding: 4px 16px 8px; flex: none; }
+  .primary-nav button { display: flex; align-items: center; justify-content: center; gap: 8px; min-height: 32px; padding: 4px 12px; font-size: 12px; font-weight: 500; color: var(--text-secondary); border-radius: 8px; }
+  .primary-nav button:hover, .primary-nav button.active { color: var(--text-primary); background: var(--surface-hover); }
+  @keyframes content-in { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
+  @media (max-width: 380px) { .companion-header { padding-inline: 8px; gap: 4px; } .primary-nav { gap: 4px; padding-inline: 4px; } }
 </style>

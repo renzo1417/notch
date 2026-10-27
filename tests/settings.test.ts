@@ -13,9 +13,9 @@ import {
   clamp,
 } from "../src/settings/migrations.ts";
 
-test("Settings: default configuration contains all 9 sections with schemaVersion 1", () => {
+test("Settings: default configuration contains all 9 sections with schemaVersion 2", () => {
   assert.equal(DEFAULT_SETTINGS_CONFIG.schemaVersion, SETTINGS_SCHEMA_VERSION);
-  assert.equal(DEFAULT_SETTINGS_CONFIG.schemaVersion, 1);
+  assert.equal(DEFAULT_SETTINGS_CONFIG.schemaVersion, 2);
 
   // 1. General
   assert.equal(typeof DEFAULT_SETTINGS_CONFIG.general.launchAtStartup, "boolean");
@@ -24,7 +24,7 @@ test("Settings: default configuration contains all 9 sections with schemaVersion
   assert.equal(DEFAULT_SETTINGS_CONFIG.general.autoCollapseDelayMs, 4000);
 
   // 2. Appearance
-  assert.equal(DEFAULT_SETTINGS_CONFIG.appearance.accentColor, "#3b82f6");
+  assert.equal(DEFAULT_SETTINGS_CONFIG.appearance.accentColor, "#d8dce2");
   assert.equal(DEFAULT_SETTINGS_CONFIG.appearance.opacity, 0.96);
   assert.equal(DEFAULT_SETTINGS_CONFIG.appearance.animationIntensity, 1.0);
   assert.equal(DEFAULT_SETTINGS_CONFIG.appearance.reducedMotion, false);
@@ -69,7 +69,7 @@ test("Settings Recovery: null, undefined, or empty payload safely recovers to de
   const fromNull = migrateSettings(null);
   assert.equal(fromNull.schemaVersion, SETTINGS_SCHEMA_VERSION);
   assert.equal(fromNull.general.autoCollapseDelayMs, 4000);
-  assert.equal(fromNull.appearance.accentColor, "#3b82f6");
+  assert.equal(fromNull.appearance.accentColor, "#d8dce2");
 
   const fromUndefined = migrateSettings(undefined);
   assert.equal(fromUndefined.schemaVersion, SETTINGS_SCHEMA_VERSION);
@@ -101,9 +101,9 @@ test("Settings Validation: clamps invalid numbers and rejects malformed hex colo
   };
 
   const recovered = migrateSettings(corrupted);
-  assert.equal(recovered.schemaVersion, 1);
+  assert.equal(recovered.schemaVersion, 2);
   // Color should fall back to default
-  assert.equal(recovered.appearance.accentColor, "#3b82f6");
+  assert.equal(recovered.appearance.accentColor, "#d8dce2");
   // Opacity should clamp to 1.0
   assert.equal(recovered.appearance.opacity, 1.0);
   // Animation intensity should clamp to 0.0
@@ -119,7 +119,7 @@ test("Settings Validation: clamps invalid numbers and rejects malformed hex colo
 });
 
 test("Settings Helpers: isValidHexColor and clamp handle boundary conditions", () => {
-  assert.equal(isValidHexColor("#3b82f6"), true);
+  assert.equal(isValidHexColor("#d8dce2"), true);
   assert.equal(isValidHexColor("#fff"), true);
   assert.equal(isValidHexColor("#AABBCC"), true);
   assert.equal(isValidHexColor("3b82f6"), false);
@@ -134,7 +134,7 @@ test("Settings Helpers: isValidHexColor and clamp handle boundary conditions", (
   assert.equal(clamp(NaN, 0, 100, 25), 25);
 });
 
-test("Settings Migration: preserves legacy v0 partial config and fills missing v1 sections", () => {
+test("Settings Migration: preserves legacy v0 partial config and fills missing sections", () => {
   const legacyV0Config = {
     general: {
       launchAtStartup: true,
@@ -154,7 +154,7 @@ test("Settings Migration: preserves legacy v0 partial config and fills missing v
   };
 
   const migrated = migrateSettings(legacyV0Config);
-  assert.equal(migrated.schemaVersion, 1);
+  assert.equal(migrated.schemaVersion, 2);
   assert.equal(migrated.general.launchAtStartup, true);
   assert.equal(migrated.general.alwaysOnTop, false);
   assert.equal(migrated.general.autoCollapseDelayMs, 6000);

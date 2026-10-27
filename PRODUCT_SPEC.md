@@ -46,7 +46,7 @@ The core experience combines:
 
 - an interactive mascot,
 - a context-aware center area,
-- persistent music on the right,
+- music controls in home and the companion header,
 - focus timer,
 - coding/activity context,
 - downloads awareness,
@@ -92,63 +92,17 @@ Do not use Coucou/Mochi/Apple branding.
 
 ---
 
-# 3. Core Three-Zone Layout
+# 3. Focused Companion Layout
 
-When meaningfully expanded, the notch has three primary zones:
+The approved graphite redesign replaces the permanent three-zone layout.
 
-```text
-┌──────────────────────────────────────────────────────────────────┐
-│   LEFT / MASCOT   │       CENTER / CONTEXT       │ RIGHT / MUSIC │
-└──────────────────────────────────────────────────────────────────┘
-```
+- Compact: Pip, one activity summary, and an active media indicator.
+- Home: companion header, current activity, available music controls, and Apps / Focus / More navigation.
+- Tool drawers: a compact companion header above one full-width tool. Active media stays accessible through artwork and play/pause in the header.
+- More opens an inline utility drawer containing Clipboard, Downloads, Battery when available, and Settings.
+- Settings groups all existing fields under Appearance (appearance / mascot), Tools (music / timer / clipboard / downloads / apps), and System (general / performance).
 
-## Left — Mascot
-
-The mascot provides personality and visual feedback.
-
-It can react to:
-- idle state,
-- user hover,
-- clicks,
-- cursor position,
-- focus timer,
-- download completion,
-- battery warning,
-- launch confirmation,
-- long inactivity.
-
-The mascot should not constantly animate.
-
-## Center — Context Surface
-
-The center is the most important innovation.
-
-It dynamically shows the most relevant current context rather than becoming a fixed dashboard.
-
-Possible contexts:
-- coding session,
-- focus timer,
-- active download,
-- clipboard,
-- short internal notification,
-- launcher,
-- battery warning,
-- idle/home context.
-
-## Right — Music
-
-Music should remain visually anchored on the right whenever a compatible media session exists.
-
-Display:
-- album art,
-- track title,
-- artist,
-- previous,
-- play/pause,
-- next,
-- optional progress only when reliable.
-
-When nothing is playing, show a subdued empty state instead of destroying the layout.
+Open drawers remain selected when context priorities change. Warnings and completions update the companion header without replacing tool content or interrupting input.
 
 ---
 
@@ -298,22 +252,19 @@ Default theme: dark.
 Suggested tokens:
 
 ```css
---surface-root: rgba(12, 12, 13, 0.96);
---surface-raised: rgba(27, 27, 29, 0.96);
+--surface-root: rgba(21, 22, 24, 0.96);
+--surface-raised: #202226;
 --surface-hover: rgba(255, 255, 255, 0.07);
 
---text-primary: rgba(255, 255, 255, 0.96);
---text-secondary: rgba(255, 255, 255, 0.64);
---text-tertiary: rgba(255, 255, 255, 0.42);
+--text-primary: #eceef1;
+--text-secondary: #adb1b8;
+--text-tertiary: #858a94;
 
 --border-subtle: rgba(255, 255, 255, 0.08);
 --shadow-soft: rgba(0, 0, 0, 0.30);
 ```
 
-Accent:
-- one accent color at a time,
-- restrained use,
-- user-configurable later.
+Accent defaults to soft silver `#d8dce2`; custom accents remain configurable. Use muted amber `#e4b46a` for warnings and muted red `#df9191` for errors. Ordinary activity categories use icons and neutral text.
 
 ## Typography
 
@@ -388,47 +339,24 @@ Respect reduced-motion preferences where practical.
 
 # 10. Compact State
 
-Compact mode should show only immediate information.
-
-Example:
-
-```text
-┌────────────────────────────────────────┐
-│ mascot │ VS Code · 42m │ ♪ tiny art   │
-└────────────────────────────────────────┘
-```
-
-or:
-
-```text
-┌────────────────────────────────────────┐
-│ mascot │ Focus 18:42   │ ♪ tiny art   │
-└────────────────────────────────────────┘
-```
-
-Click expands.
-
-Hover should not cause a huge accidental expansion.
+Compact is 304 × 44 logical pixels. It shows Pip, one current summary, and an active media indicator. Click or Enter/Space opens home. Hover changes Pip's expression without expanding. Background events never auto-expand the shell.
 
 ---
 
-# 11. Expanded Layout
+# 11. Expanded Home and Drawers
 
-Concept:
+| State | Visible size | Native window including shadow margins |
+|---|---|---|
+| Compact | 304 × 44 | 336 × 60 |
+| Home | 480 × 160 | 512 × 176 |
+| Apps, Focus, Clipboard, Downloads, Battery, More | 480 × 328 | 512 × 344 |
+| Settings | 640 × 456 | 672 × 472 |
 
-```text
-┌─────────────────────────────────────────────────────────────────────────┐
-│ [ mascot ] │ [ contextual info / controls ] │ [art] Track              │
-│            │                               │       Artist   ◀  ❚❚  ▶   │
-└─────────────────────────────────────────────────────────────────────────┘
-```
+All shells stay attached to the top edge, with square top corners and 18px lower corners. Retain 16px transparent space at each side and below; clamp the native window to the selected monitor in logical units. Content scrolls within constrained heights.
 
-Approximate visual balance:
-- mascot: 18–22%,
-- context: 40–48%,
-- music: 30–38%.
+Back or Escape returns from a drawer/settings to home; Escape on home collapses. Restore focus to the opening control. Home auto-collapses after the configured delay after pointer exit; keyboard interaction pauses this timer. Drawers and settings stay open until dismissed.
 
-These are guidelines, not rigid layout percentages.
+Native bounds grow before content expands and shrink after the effective CSS transition. Serialize native resizes and cancel pending shrink delays when a newer request arrives. Reduced motion makes these delays zero.
 
 ---
 

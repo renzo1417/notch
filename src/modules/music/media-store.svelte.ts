@@ -35,10 +35,10 @@ class MediaStore {
     }
   }
 
-  async togglePlayPause(): Promise<void> {
+  async togglePlayPause(): Promise<boolean> {
     const caps = this.state.capabilities;
     if (!caps.canTogglePlayPause && !caps.canPlay && !caps.canPause) {
-      return;
+      return false;
     }
 
     // Optimistic toggle
@@ -47,27 +47,33 @@ class MediaStore {
 
     try {
       await invoke("media_toggle_play_pause");
+      return true;
     } catch (err) {
       console.warn("[MediaStore] media_toggle_play_pause failed:", err);
       this.state.isPlaying = prevPlaying;
+      return false;
     }
   }
 
-  async previous(): Promise<void> {
-    if (!this.state.capabilities.canSkipPrevious) return;
+  async previous(): Promise<boolean> {
+    if (!this.state.capabilities.canSkipPrevious) return false;
     try {
       await invoke("media_previous");
+      return true;
     } catch (err) {
       console.warn("[MediaStore] media_previous failed:", err);
+      return false;
     }
   }
 
-  async next(): Promise<void> {
-    if (!this.state.capabilities.canSkipNext) return;
+  async next(): Promise<boolean> {
+    if (!this.state.capabilities.canSkipNext) return false;
     try {
       await invoke("media_next");
+      return true;
     } catch (err) {
       console.warn("[MediaStore] media_next failed:", err);
+      return false;
     }
   }
 

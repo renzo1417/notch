@@ -58,7 +58,7 @@ WindowsNotch/
 │  ├─ shell/
 │  │  ├─ NotchShell.svelte      # Root notch window layout & IPC hook
 │  │  ├─ CompactNotch.svelte    # Compact mode surface
-│  │  ├─ ExpandedNotch.svelte   # 3-zone expanded surface
+│  │  ├─ ExpandedNotch.svelte   # Companion header and focused drawers
 │  │  └─ shell-motion.ts        # Timing & curve constants
 │  ├─ mascot/
 │  │  ├─ MascotCanvas.svelte    # Interactive procedural companion renderer
@@ -75,7 +75,7 @@ WindowsNotch/
 │  │  ├─ notifications/         # Internal event notifications
 │  │  └─ launcher/              # Validated application launcher & dock
 │  ├─ settings/
-│  │  ├─ types.ts               # Configuration schema (v1) & section types
+│  │  ├─ types.ts               # Configuration schema (v2) & section types
 │  │  ├─ migrations.ts          # Schema version migration & safe error recovery
 │  │  ├─ settings-store.svelte.ts # Reactive settings store & live token updates
 │  │  ├─ SettingsView.svelte    # Compact daily-use settings modal panel
@@ -110,7 +110,7 @@ WindowsNotch/
 │  │  │  ├─ downloads.rs        # ReadDirectoryChangesW watcher
 │  │  │  ├─ launcher.rs         # Validated app launcher & icon extraction
 │  │  │  ├─ startup.rs          # Windows Run key autostart integration
-│  │  │  └─ settings.rs         # SettingsManager, schema v1, safe recovery
+│  │  │  └─ settings.rs         # SettingsManager, schema v2, safe recovery
 │  │  ├─ tray.rs                # System tray icon and menu setup
 │  │  ├─ window.rs              # Top-center window placement helper
 │  │  └─ state.rs               # Central backend state container
@@ -146,16 +146,16 @@ WindowsNotch/
 The UI shell transition model is discrete:
 ```ts
 type NotchShellState =
-  | "dormant"    // Thin minimal line when idle/unfocused
-  | "compact"    // Standard pill showing immediate status
-  | "peek"       // Short-lived alert or confirmation glance
-  | "expanded"   // Full 3-zone surface (Mascot + Context + Music)
-  | "panel"      // Dedicated popover for clipboard or dock
-  | "settings";  // Configuration surface
+  | "compact"    // 304 x 44
+  | "expanded"   // 480 x 160 home
+  | "apps" | "focus" | "clipboard" | "downloads"
+  | "utilities" | "battery" // Full-width 480 x 328 drawers
+  | "settings"   // 640 x 456 grouped settings
+  | "dormant" | "peek" | "panel" | "launcher"; // Legacy states
 ```
 
 ### 3.3 Context Priority Engine
-The center zone relies on a deterministic priority hierarchy (`P0` through `P6`):
+The activity summary relies on a deterministic priority hierarchy (`P0` through `P6`):
 1. **P0 (Critical System Warning):** Low battery, critical alerts.
 2. **P1 (Short-lived Completion):** Download finished, timer finished.
 3. **P2 (Active Focus Timer):** Active countdown.
@@ -227,7 +227,7 @@ To prevent blocking underlying Windows applications (such as browser tabs and ti
 - **Collapsed Continuity:** Because the timer engine runs in the persistent Webview singleton (`timerStore` / `FocusTimerEngine`), it continues ticking with full timestamp accuracy while the notch shell is collapsed to compact resting geometry.
 
 ### 5.2 Context Priority Integration (P2 Outranks P4)
-- **Active Precedence:** Active focus countdowns register in `ContextEngine` as `P2_FOCUS_TIMER`. This deterministically outranks background coding sessions (`P4_CODING`), elevating the focus timer to the center zone.
+- **Active Precedence:** Active focus countdowns register in `ContextEngine` as `P2_FOCUS_TIMER`. This deterministically outranks background coding sessions (`P4_CODING`), elevating the focus timer in the activity summary.
 - **Manual Configuration Surface:** When opened prior to starting, the timer surface registers as `P5_USER_SURFACE`. Starting promotes the candidate immediately to `P2_FOCUS_TIMER`.
 - **Clean Reset & Fallback:** Stopping or resetting the timer unregisters candidate `timer`, seamlessly revealing any active coding session (`P4`) or returning to idle (`P6`).
 
@@ -258,8 +258,8 @@ To prevent blocking underlying Windows applications (such as browser tabs and ti
 - **Path Verification:** Upon startup and query, every registered application's path is verified on disk (`exists: bool`).
 
 ### 6.4 Compact Dock & Context Priority Integration
-- **Dock Layout:** A restrained horizontal dock showing up to 5 pinned apps before overflow pagination without expanding into a giant grid.
-- **Priority Tier:** Manually opened launcher surfaces register at `P5_USER_SURFACE`. Background coding sessions (`P4`) and active timers (`P2`) take priority when active.
+- **Apps Layout:** A four-column grid in the focused Apps drawer, with real icons and a scrolling list when needed.
+- **Priority Tier:** Manually opened launcher surfaces register at `P5_USER_SURFACE`. Background coding sessions (`P4`) and active timers (`P2`) take priority in the summary without changing the open drawer.
 - **Broken App Handling:** Missing or moved application binaries visually display a warning indicator with immediate `Locate` and `Remove` actions.
 - **Launch Feedback & Coordinated Shell Collapse:**
   - On launch, companion Pip reacts with a cheerful expression (`happy`).
@@ -282,3 +282,14 @@ To prevent blocking underlying Windows applications (such as browser tabs and ti
 - **Local-First Security:** Zero network ports opened, zero telemetry endpoints contacted, zero shell string execution.
 - **Packaging Artifacts:** Standalone release executable at `src-tauri/target/release/project-notch.exe`.
 
+
+
+## Graphite shell and navigation
+
+The current shell uses explicit navigation independently of the context engine. Context priorities still select summaries and mascot reactions; they never replace an open tool. `utilities` and `battery` join the existing shell states, and legacy launcher/panel aliases remain supported.
+
+`ShellTransition` serializes native resize calls, grows native bounds before showing larger content, and delays shrinking by the current CSS duration. New requests cancel pending shrink delays. The shell initializes native stores once and owns tool open/close cleanup and focus restoration.
+
+Visible geometries are compact 304×44, home 480×160, drawers 480×328, and settings 640×456. Native windows add 32px width / 16px height for shadows, clamp to monitor logical bounds, and stay top-centered. Monitor changes preserve the active state; saved monitor and always-on-top preferences apply at startup.
+
+Settings schema 2 migrates the legacy default blue to graphite once, preserving custom accents and all other fields. Both TypeScript and Rust implement that migration. Existing settings sections are presented under Appearance, Tools, and System without changing their stored field names.

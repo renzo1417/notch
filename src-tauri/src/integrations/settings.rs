@@ -7,7 +7,7 @@ use tauri::{AppHandle, Emitter, Manager};
 use crate::integrations::startup;
 use crate::window;
 
-pub const CURRENT_SCHEMA_VERSION: u32 = 1;
+pub const CURRENT_SCHEMA_VERSION: u32 = 2;
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 #[serde(rename_all = "camelCase")]
@@ -41,7 +41,7 @@ pub struct AppearanceConfig {
 impl Default for AppearanceConfig {
     fn default() -> Self {
         Self {
-            accent_color: "#3b82f6".to_string(),
+            accent_color: "#d8dce2".to_string(),
             opacity: 0.96,
             animation_intensity: 1.0,
             reduced_motion: false,
@@ -215,7 +215,7 @@ pub fn migrate_settings_json(raw: serde_json::Value) -> SettingsConfig {
     let mut config = SettingsConfig::default();
 
     if let serde_json::Value::Object(map) = raw {
-        let _version = map
+        let version = map
             .get("schemaVersion")
             .and_then(|v| v.as_u64())
             .unwrap_or(0) as u32;
@@ -322,7 +322,11 @@ pub fn migrate_settings_json(raw: serde_json::Value) -> SettingsConfig {
             }
         }
 
-        // If migrating from v0 or earlier, ensure current schema version
+        if version < 2 && config.appearance.accent_color.trim().eq_ignore_ascii_case("#3b82f6") {
+            config.appearance.accent_color = AppearanceConfig::default().accent_color;
+        }
+
+        // Advance after applying one-time migrations.
         config.schema_version = CURRENT_SCHEMA_VERSION;
     }
 
@@ -408,10 +412,15 @@ impl SettingsManager {
 
                 // Selected monitor repositioning
                 if current.general.selected_monitor != new_config.general.selected_monitor {
-                    let state_str = "compact"; // Reposition in current state
+                    let app_state = app.state::<crate::state::AppState>();
+                    let state_str = {
+                        let mut shell = app_state.shell_config.lock().map_err(|e| e.to_string())?;
+                        shell.selected_monitor = new_config.general.selected_monitor.clone();
+                        shell.current_state.clone()
+                    };
                     let _ = window::apply_notch_state(
                         &win,
-                        state_str,
+                        &state_str,
                         new_config.general.selected_monitor.as_deref(),
                     );
                 }
@@ -441,5 +450,34 @@ impl SettingsManager {
                 .map_err(|e| format!("Failed to write settings to disk: {e}"))?;
         }
         Ok(())
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use serde_json::json;
+
+    #[test]
+    fn graphite_migrates_legacy_blue_without_resetting_preferences() {
+        let config = migrate_settings_json(json!({
+            "schemaVersion": 1,
+            "appearance": { "accentColor": "#3B82F6", "opacity": 0.82 },
+            "general": { "selectedMonitor": "Display 2" }
+        }));
+        assert_eq!(config.schema_version, 2);
+        assert_eq!(config.appearance.accent_color, "#d8dce2");
+        assert!((config.appearance.opacity - 0.82).abs() < 0.001);
+        assert_eq!(config.general.selected_monitor.as_deref(), Some("Display 2"));
+        assert!(!config.clipboard.persist_history);
+        assert_eq!(migrate_settings_json(serde_json::to_value(&config).unwrap()), config);
+    }
+
+    #[test]
+    fn custom_and_current_version_accents_survive() {
+        for (version, color) in [(1, "#f08"), (2, "#3b82f6")] {
+            let config = migrate_settings_json(json!({ "schemaVersion": version, "appearance": { "accentColor": color } }));
+            assert_eq!(config.appearance.accent_color, color);
+        }
     }
 }

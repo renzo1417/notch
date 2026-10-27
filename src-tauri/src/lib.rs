@@ -78,6 +78,16 @@ pub fn run() {
             let settings_mgr = app.state::<AppState>().settings_manager.clone();
             if let Ok(app_data_dir) = handle.path().app_data_dir() {
                 settings_mgr.init(app_data_dir, handle.clone());
+                let config = settings_mgr.get_settings();
+                if let Ok(mut shell) = app.state::<AppState>().shell_config.lock() {
+                    shell.selected_monitor = config.general.selected_monitor.clone();
+                    shell.always_on_top = config.general.always_on_top;
+                }
+                if let Some(webview) = app.get_webview_window("main") {
+                    let win = webview.as_ref().window();
+                    let _ = win.set_always_on_top(config.general.always_on_top);
+                    let _ = window::apply_notch_state(&win, "compact", config.general.selected_monitor.as_deref());
+                }
             }
             Ok(())
         })

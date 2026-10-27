@@ -1,3 +1,4 @@
+import { GRAPHITE } from "../styles/palette.ts";
 import type { MascotDimensions, MascotRenderState, MascotState } from "./types";
 
 export interface DrawOptions {
@@ -28,19 +29,20 @@ export class MascotRenderer {
     const warningShakeX =
       state.currentState === "warning" ? state.warningAlertProgress * 1.2 : 0;
 
-    const anchorY = centerY + 18; // Base anchor for squash & stretch
+    const scale = dimensions.scale || 1.0;
+    const anchorY = centerY + 18 * scale; // Base anchor for squash & stretch
 
     ctx.save();
     // Translate to bottom anchor of mascot
-    ctx.translate(centerX + warningShakeX, anchorY + breathingY + hopY);
+    ctx.translate(centerX + warningShakeX * scale, anchorY + (breathingY + hopY) * scale);
 
     // Apply head tilt
     if (state.headTiltRad !== 0) {
       ctx.rotate(state.headTiltRad);
     }
 
-    // Apply squash and stretch relative to ground anchor
-    ctx.scale(state.squashX, state.squashY);
+    // Apply squash and stretch relative to ground anchor, multiplied by target scale
+    ctx.scale(scale * state.squashX, scale * state.squashY);
 
     // Translate back up so mascot center is at (0, -18)
     const localCenterY = -18;
@@ -120,7 +122,7 @@ export class MascotRenderer {
     tipColor: string
   ): void {
     // Ear base
-    ctx.fillStyle = "#1e2126";
+    ctx.fillStyle = GRAPHITE.ear;
     this.roundedRect(ctx, -w / 2, -h, w, h, r);
     ctx.fill();
 
@@ -145,7 +147,7 @@ export class MascotRenderer {
     const y = centerY - chassisH / 2;
 
     // Body base
-    ctx.fillStyle = "#141619";
+    ctx.fillStyle = GRAPHITE.chassis;
     this.roundedRect(ctx, x, y, chassisW, chassisH, radius);
     ctx.fill();
 
@@ -178,7 +180,7 @@ export class MascotRenderer {
     const y = centerY - visorH / 2 + 1;
 
     // Deep obsidian background
-    ctx.fillStyle = "#090a0d";
+    ctx.fillStyle = GRAPHITE.visor;
     this.roundedRect(ctx, x, y, visorW, visorH, radius);
     ctx.fill();
 
@@ -374,8 +376,8 @@ export class MascotRenderer {
     angleRad: number
   ): void {
     // Spinning spirals in opposite directions
-    this.drawSingleSpiral(ctx, lx, y, 4, angleRad, "#ec4899");
-    this.drawSingleSpiral(ctx, rx, y, 4, -angleRad, "#38bdf8");
+    this.drawSingleSpiral(ctx, lx, y, 4, angleRad, GRAPHITE.text);
+    this.drawSingleSpiral(ctx, rx, y, 4, -angleRad, GRAPHITE.text);
   }
 
   private drawSingleSpiral(
@@ -470,7 +472,7 @@ export class MascotRenderer {
     // Ambient soft glow
     ctx.save();
     ctx.shadowColor = color;
-    ctx.shadowBlur = 4;
+    ctx.shadowBlur = 1.5;
     ctx.fillStyle = color;
     this.roundedRect(ctx, x - w / 2, y - h / 2, w, h, r);
     ctx.fill();
@@ -503,7 +505,7 @@ export class MascotRenderer {
         Math.cos(angle) * orbitRadiusX,
         centerY - 22 + Math.sin(angle) * orbitRadiusY,
         3.0,
-        "#facc15"
+        GRAPHITE.text
       );
 
       this.drawOrbitStar(
@@ -511,7 +513,7 @@ export class MascotRenderer {
         Math.cos(angle + Math.PI) * orbitRadiusX,
         centerY - 22 + Math.sin(angle + Math.PI) * orbitRadiusY,
         2.5,
-        "#facc15"
+        GRAPHITE.text
       );
     }
 
@@ -519,7 +521,7 @@ export class MascotRenderer {
     if (state.sleepParticles.length > 0) {
       ctx.save();
       ctx.font = "bold 9px 'Segoe UI Variable', sans-serif";
-      ctx.fillStyle = "rgba(147, 197, 253, 0.75)";
+      ctx.fillStyle = GRAPHITE.secondary;
 
       for (const p of state.sleepParticles) {
         ctx.globalAlpha = p.opacity;
@@ -556,25 +558,9 @@ export class MascotRenderer {
   }
 
   private getAccentColorForState(state: MascotState): string {
-    switch (state) {
-      case "focused":
-        return "#2dd4bf"; // Ice teal
-      case "sleepy":
-        return "#0284c7"; // Muted blue
-      case "warning":
-        return "#f59e0b"; // Warning amber
-      case "celebrate":
-        return "#facc15"; // Celebration gold
-      case "dizzy":
-        return "#ec4899"; // Dizzy pink
-      case "curious":
-      case "happy":
-      case "look":
-      case "blink":
-      case "idle":
-      default:
-        return "#38bdf8"; // Restrained electric cyan
-    }
+    if (state === "warning") return GRAPHITE.warning;
+    if (state === "sleepy") return GRAPHITE.secondary;
+    return GRAPHITE.text;
   }
 
   /**

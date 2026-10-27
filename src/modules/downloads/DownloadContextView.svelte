@@ -46,7 +46,7 @@
       >
         <IconDownload
           size={10}
-          color={active ? "#38bdf8" : completed ? "#22c55e" : "var(--text-tertiary)"}
+          color={active ? "var(--status-info)" : completed ? "var(--status-success)" : "var(--text-tertiary)"}
         />
       </div>
     </div>
@@ -385,7 +385,7 @@
   }
 
   .folder-del-btn:hover {
-    color: #ef4444;
+    color: var(--status-error);
   }
 
   .add-folder-btn {

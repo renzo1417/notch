@@ -3,7 +3,9 @@
  * Defined in PRODUCT_SPEC.md section 22.
  */
 
-export const SETTINGS_SCHEMA_VERSION = 1;
+import { GRAPHITE } from "../styles/palette.ts";
+
+export const SETTINGS_SCHEMA_VERSION = 2;
 
 export interface GeneralSettings {
   /** Launch application on Windows startup */
@@ -39,7 +41,7 @@ export interface MascotSettings {
 }
 
 export interface MusicSettings {
-  /** Whether right-zone media module is active */
+  /** Whether the home and header media player is active */
   enabled: boolean;
   /** Show playback transport controls */
   showControls: boolean;
@@ -118,6 +120,7 @@ export type SettingsSection =
   | "performance";
 
 export const ACCENT_COLOR_PRESETS: Array<{ label: string; value: string }> = [
+  { label: "Graphite", value: GRAPHITE.accent },
   { label: "Windows Blue", value: "#3b82f6" },
   { label: "Emerald", value: "#10b981" },
   { label: "Violet", value: "#8b5cf6" },
@@ -135,7 +138,7 @@ export const DEFAULT_SETTINGS_CONFIG: SettingsConfig = {
     autoCollapseDelayMs: 4000,
   },
   appearance: {
-    accentColor: "#3b82f6",
+    accentColor: GRAPHITE.accent,
     opacity: 0.96,
     animationIntensity: 1.0,
     reducedMotion: false,

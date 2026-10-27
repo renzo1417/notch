@@ -30,7 +30,7 @@
   }
 </script>
 
-<div class="section-container" role="tabpanel" aria-label="Apps Settings">
+<div class="section-container" role="group" aria-label="Apps Settings">
   <!-- Enable Quick Dock -->
   <div class="setting-row">
     <div class="setting-info">
@@ -85,7 +85,7 @@
         onclick={handleAddApp}
         title="Add application executable"
       >
-        <IconPlus size={12} color="currentColor" />
+        <IconPlus size={16} color="currentColor" />
         <span>Add App</span>
       </button>
     </div>
@@ -121,7 +121,7 @@
               aria-label="Remove application"
               onclick={() => handleRemoveApp(app.id)}
             >
-              <IconTrash size={12} color="var(--text-tertiary)" />
+              <IconTrash size={16} color="var(--text-tertiary)" />
             </button>
           </div>
         {/each}
@@ -129,213 +129,3 @@
     </div>
   </div>
 </div>
-
-<style>
-  .section-container {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-    width: 100%;
-  }
-
-  .setting-row {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: var(--space-12);
-    padding: 6px 10px;
-    background: var(--surface-raised);
-    border: 1px solid var(--border-subtle);
-    border-radius: var(--radius-control);
-    transition: opacity var(--motion-micro) var(--ease-natural);
-  }
-
-  .setting-row.disabled {
-    opacity: 0.5;
-    pointer-events: none;
-  }
-
-  .setting-info {
-    display: flex;
-    flex-direction: column;
-    gap: 2px;
-    min-width: 0;
-  }
-
-  .setting-label {
-    font-size: var(--font-size-label);
-    font-weight: 600;
-    color: var(--text-primary);
-    line-height: var(--line-height-tight);
-  }
-
-  .setting-desc {
-    font-size: var(--font-size-tiny);
-    color: var(--text-tertiary);
-    line-height: var(--line-height-tight);
-  }
-
-  .slider-group {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    flex-shrink: 0;
-  }
-
-  .win-slider {
-    width: 90px;
-    accent-color: var(--accent-primary);
-    cursor: pointer;
-  }
-
-  .slider-label {
-    font-size: var(--font-size-meta);
-    font-weight: 600;
-    color: var(--text-secondary);
-    min-width: 44px;
-    text-align: right;
-  }
-
-  .apps-group {
-    display: flex;
-    flex-direction: column;
-    gap: 6px;
-    padding: 8px 10px;
-    background: var(--surface-raised);
-    border: 1px solid var(--border-subtle);
-    border-radius: var(--radius-control);
-  }
-
-  .apps-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-  }
-
-  .add-app-btn {
-    display: inline-flex;
-    align-items: center;
-    gap: 4px;
-    padding: 3px 8px;
-    background: var(--surface-root);
-    border: 1px solid var(--border-strong);
-    border-radius: 6px;
-    color: var(--text-primary);
-    font-size: var(--font-size-meta);
-    font-weight: 500;
-    cursor: pointer;
-    transition: background-color var(--motion-micro) var(--ease-natural);
-  }
-
-  .add-app-btn:hover {
-    background: var(--surface-hover);
-  }
-
-  .apps-list {
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-    max-height: 80px;
-    overflow-y: auto;
-  }
-
-  .app-item {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    background: var(--surface-root);
-    border: 1px solid var(--border-subtle);
-    border-radius: 4px;
-    padding: 3px 8px;
-    transition: opacity var(--motion-micro) var(--ease-natural);
-  }
-
-  .app-item.disabled {
-    opacity: 0.5;
-  }
-
-  .app-icon {
-    width: 16px;
-    height: 16px;
-    border-radius: 3px;
-    object-fit: contain;
-  }
-
-  .app-name {
-    flex: 1;
-    min-width: 0;
-    font-size: var(--font-size-meta);
-    color: var(--text-secondary);
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-  }
-
-  .remove-app-btn {
-    background: transparent;
-    border: none;
-    cursor: pointer;
-    padding: 2px;
-    border-radius: 4px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-  }
-
-  .remove-app-btn:hover {
-    background: rgba(239, 68, 68, 0.2);
-  }
-
-  .empty-apps {
-    font-size: var(--font-size-tiny);
-    color: var(--text-tertiary);
-    padding: 4px 0;
-  }
-
-  .win-switch {
-    width: 38px;
-    height: 20px;
-    border-radius: 9999px;
-    background: var(--surface-hover);
-    border: 1px solid var(--border-strong);
-    padding: 2px;
-    cursor: pointer;
-    position: relative;
-    transition: background-color var(--motion-micro) var(--ease-natural),
-                border-color var(--motion-micro) var(--ease-natural);
-    flex-shrink: 0;
-  }
-
-  .win-switch.mini {
-    width: 28px;
-    height: 16px;
-  }
-
-  .win-switch.checked {
-    background: var(--accent-primary);
-    border-color: var(--accent-primary);
-  }
-
-  .switch-thumb {
-    display: block;
-    width: 14px;
-    height: 14px;
-    border-radius: 50%;
-    background: white;
-    transform: translateX(0);
-    transition: transform var(--motion-micro) var(--ease-natural);
-  }
-
-  .switch-thumb.mini {
-    width: 10px;
-    height: 10px;
-  }
-
-  .win-switch.checked .switch-thumb {
-    transform: translateX(18px);
-  }
-
-  .win-switch.checked .switch-thumb.mini {
-    transform: translateX(12px);
-  }
-</style>

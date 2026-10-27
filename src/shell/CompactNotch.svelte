@@ -1,251 +1,37 @@
 <script lang="ts">
-  import { onMount, onDestroy } from "svelte";
   import MascotCanvas from "../mascot/MascotCanvas.svelte";
-  import IconMusic from "../icons/IconMusic.svelte";
+  import ActivitySummary from "./ActivitySummary.svelte";
   import { mediaStore } from "../modules/music/media-store.svelte";
-  import { codingStore } from "../modules/coding/coding-store.svelte";
-  import { timerStore } from "../modules/timer/timer-store.svelte";
-  import { clipboardStore } from "../modules/clipboard/clipboard-store.svelte";
-  import { batteryStore } from "../modules/battery/battery-store.svelte";
-  import { downloadsStore } from "../modules/downloads/downloads-store.svelte";
-  import { contextEngine, type ContextCandidate } from "../app/state/context-engine";
-
-  interface Props {
-    backendConnected: boolean;
-  }
-
-  let { backendConnected }: Props = $props();
-
-  let activeCandidate = $state<ContextCandidate>(contextEngine.current);
-  let unsubContext: (() => void) | null = null;
-
-  onMount(() => {
-    mediaStore.init();
-    codingStore.init();
-    clipboardStore.init();
-    batteryStore.init();
-    downloadsStore.init();
-    unsubContext = contextEngine.subscribe((cand) => {
-      activeCandidate = cand;
-    });
-  });
-
-  onDestroy(() => {
-    if (unsubContext) {
-      unsubContext();
-    }
-  });
-
+  import { settingsStore } from "../settings/settings-store.svelte";
+  import IconMusic from "../icons/IconMusic.svelte";
+  let { onopen }: { onopen: () => void } = $props();
+  let mascot = $state<MascotCanvas>();
+  let artFailed = $state(false);
   const media = $derived(mediaStore.state);
-  const isPlaying = $derived(media.isPlaying);
-  const mediaTooltip = $derived(
-    isPlaying && media.title
-      ? `${media.title}${media.artist ? ` · ${media.artist}` : ""}`
-      : media.hasSession && media.title
-      ? `Paused: ${media.title}`
-      : "No audio playing"
-  );
-
-  const codingSession = $derived(codingStore.state);
-  const compactCodingLabel = $derived(
-    codingSession.appName
-      ? `${codingSession.appName}${codingSession.projectLabel ? ` · ${codingSession.projectLabel}` : ""}${codingSession.elapsedMinutes > 0 ? ` · ${codingSession.elapsedMinutes}m` : ""}`
-      : "Coding"
-  );
-
-  const compactLabel = $derived(
-    activeCandidate.mode === "timer"
-      ? timerStore.formattedCompact
-      : activeCandidate.mode === "coding"
-      ? compactCodingLabel
-      : activeCandidate.mode === "download"
-      ? (downloadsStore.activeDownload
-          ? (downloadsStore.activeDownload.progressPercent !== undefined
-              ? `${downloadsStore.activeDownload.fileName} · ${downloadsStore.activeDownload.progressPercent}%`
-              : `Downloading… · ${downloadsStore.activeDownload.fileName}`)
-          : downloadsStore.recentCompleted
-          ? `Complete · ${downloadsStore.recentCompleted.fileName}`
-          : "Downloads")
-      : activeCandidate.mode === "launcher"
-      ? "Apps Dock"
-      : activeCandidate.mode === "clipboard"
-      ? (clipboardStore.isPaused ? "Clipboard (Paused)" : `Clipboard · ${clipboardStore.count} items`)
-      : activeCandidate.mode === "battery"
-      ? batteryStore.statusSummary
-      : activeCandidate.mode === "notification"
-      ? (typeof activeCandidate.data === "string"
-          ? activeCandidate.data
-          : (activeCandidate.data as { title?: string })?.title || "Notification")
-      : "Windows Notch"
-  );
+  $effect(() => { media.artworkDataUrl; artFailed = false; });
 </script>
 
-<div class="compact-layout" aria-label="Compact Notch Shell: {compactLabel}">
-  <!-- Left: Mini companion avatar -->
-  <div class="compact-mascot" aria-hidden="true">
-    <MascotCanvas size={26} compact={true} interactive={false} />
-  </div>
-
-  <!-- Center: Immediate context summary -->
-  <div class="compact-center">
-    <div
-      class="status-dot"
-      class:connected={backendConnected}
-      class:timer={activeCandidate.mode === "timer"}
-      class:coding={activeCandidate.mode === "coding"}
-      class:download={activeCandidate.mode === "download"}
-      class:launcher={activeCandidate.mode === "launcher"}
-      class:clipboard={activeCandidate.mode === "clipboard"}
-      class:battery={activeCandidate.mode === "battery"}
-      class:low-battery={activeCandidate.mode === "battery" && batteryStore.isLowBattery}
-      class:notification={activeCandidate.mode === "notification"}
-      aria-hidden="true"
-      title={activeCandidate.mode === "timer"
-        ? `Focus Timer: ${timerStore.formattedTime}`
-        : activeCandidate.mode === "coding"
-        ? `Coding: ${compactCodingLabel}`
-        : activeCandidate.mode === "download"
-        ? (downloadsStore.activeDownload
-            ? `Downloading: ${downloadsStore.activeDownload.fileName}`
-            : "Downloads")
-        : activeCandidate.mode === "launcher"
-        ? "Apps Dock"
-        : activeCandidate.mode === "clipboard"
-        ? `Clipboard: ${clipboardStore.count} items`
-        : activeCandidate.mode === "battery"
-        ? `Battery: ${batteryStore.statusSummary}`
-        : backendConnected
-        ? "Native backend connected"
-        : "Connecting to backend..."}
-    ></div>
-    <span class="center-label" title={compactLabel}>{compactLabel}</span>
-  </div>
-
-  <!-- Right: Subdued media indicator -->
-  <div
-    class="compact-media"
-    class:playing={isPlaying}
-    aria-hidden="true"
-    title={mediaTooltip}
-  >
-    {#if isPlaying && media.artworkDataUrl}
-      <img src={media.artworkDataUrl} alt="" class="compact-art" />
-    {:else}
-      <IconMusic
-        size={13}
-        color={isPlaying ? "var(--text-primary)" : "var(--text-tertiary)"}
-      />
-    {/if}
-  </div>
-</div>
+<button type="button" class="compact-layout" onclick={onopen}
+  onmouseenter={() => mascot?.triggerState("curious", 700)}
+  aria-label="Open notch" aria-describedby="compact-activity" aria-expanded="false" data-focus="compact">
+  {#if settingsStore.state.mascot.enabled}
+    <span class="compact-mascot" aria-hidden="true"><MascotCanvas bind:this={mascot} size={32} compact interactive={false} /></span>
+  {/if}
+  <span class="compact-summary" id="compact-activity"><ActivitySummary compact /></span>
+  {#if settingsStore.state.music.enabled && media.hasSession}
+    <span class="media-indicator" class:playing={media.isPlaying} title={media.title || "Media session"}>
+      {#if media.artworkDataUrl && !artFailed}
+        <img src={media.artworkDataUrl} alt="" onerror={() => { artFailed = true; }} />
+      {:else}<IconMusic size={16} />{/if}
+    </span>
+  {/if}
+</button>
 
 <style>
-  .compact-layout {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    width: 100%;
-    height: 100%;
-    user-select: none;
-    padding: 0 var(--space-12);
-    box-sizing: border-box;
-  }
-
-  .compact-mascot {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 26px;
-    height: 26px;
-    flex-shrink: 0;
-  }
-
-  .compact-center {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: var(--space-6);
-    flex: 1;
-    min-width: 0;
-    padding: 0 var(--space-8);
-  }
-
-  .status-dot {
-    width: 5px;
-    height: 5px;
-    border-radius: 50%;
-    background-color: var(--text-tertiary);
-    transition: background-color var(--motion-micro) var(--ease-natural);
-    flex-shrink: 0;
-  }
-
-  .status-dot.connected {
-    background-color: #22c55e;
-  }
-
-  .status-dot.timer {
-    background-color: #2dd4bf;
-  }
-
-  .status-dot.coding {
-    background-color: #38bdf8;
-  }
-
-  .status-dot.download {
-    background-color: #38bdf8;
-  }
-
-  .status-dot.launcher {
-    background-color: #818cf8;
-  }
-
-  .status-dot.clipboard {
-    background-color: #c084fc;
-  }
-
-  .status-dot.battery {
-    background-color: #22c55e;
-  }
-
-  .status-dot.battery.low-battery {
-    background-color: #ef4444;
-  }
-
-  .status-dot.notification {
-    background-color: #22c55e;
-  }
-
-  .center-label {
-    font-size: var(--font-size-label);
-    font-weight: 600;
-    letter-spacing: 0.2px;
-    color: var(--text-primary);
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-  }
-
-  .compact-media {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 20px;
-    height: 20px;
-    flex-shrink: 0;
-    opacity: 0.6;
-    border-radius: 4px;
-    overflow: hidden;
-    transition: opacity var(--motion-micro) var(--ease-natural);
-  }
-
-  .compact-media.playing {
-    opacity: 1;
-  }
-
-  .compact-art {
-    width: 16px;
-    height: 16px;
-    border-radius: 3px;
-    object-fit: cover;
-  }
+  .compact-layout { display: flex; align-items: center; gap: 12px; width: 100%; height: 100%; padding: 0 12px; text-align: left; border-radius: inherit; }
+  .compact-mascot { display: flex; flex: none; }
+  .compact-summary { min-width: 0; flex: 1; }
+  .media-indicator { display: flex; align-items: center; justify-content: center; width: 24px; height: 24px; color: var(--text-secondary); opacity: .65; flex: none; }
+  .media-indicator.playing { opacity: 1; }
+  .media-indicator img { width: 24px; height: 24px; object-fit: cover; border-radius: 6px; }
 </style>
