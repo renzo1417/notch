@@ -65,8 +65,11 @@ test("Pending collapse is canceled when a drawer is reopened", async () => {
 });
 
 test("Escape closes one level and legacy launcher navigation remains available", async () => {
-  assert.equal(backState("clipboard"), "expanded");
-  assert.equal(backState("settings"), "expanded");
+  assert.equal(backState("clipboard"), "utilities");
+  assert.equal(backState("settings"), "utilities");
+  assert.equal(backState("appPicker"), "apps");
+  assert.equal(backState("appPicker", "settings"), "settings");
+  assert.equal(backState("capture"), "expanded");
   assert.equal(backState("expanded"), "compact");
   const shown: NotchShellState[] = [];
   const transition = new ShellTransition({ resize: async () => {}, show: (state) => { shown.push(state); }, duration: () => 0 });

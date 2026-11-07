@@ -1,6 +1,6 @@
 # PROJECT_NOTCH — Design System & Tokens
 
-**Status:** Graphite companion redesign
+**Status:** Matte Blue companion
 **Reference Document:** [PRODUCT_SPEC.md](../PRODUCT_SPEC.md)
 
 ---
@@ -33,7 +33,7 @@ To maintain high visual craft, the following anti-patterns are strictly prohibit
 ### 3.1 Surface Palette
 ```css
 /* Dark theme base palette */
---surface-root: rgba(21, 22, 24, 0.96);     /* Main shell background */
+--surface-root: #151618;     /* Main shell background */
 --surface-raised: #202226;   /* Elevated controls */
 --surface-hover: rgba(255, 255, 255, 0.07); /* Hover states */
 --surface-active: rgba(255, 255, 255, 0.12);/* Active / pressed states */
@@ -48,17 +48,17 @@ To maintain high visual craft, the following anti-patterns are strictly prohibit
 
 ### 3.3 Accent Color
 ```css
-/* Graphite / soft silver */
---accent-primary: #d8dce2;
---accent-muted: rgba(216, 220, 226, 0.12);
---accent-focus: #d8dce2;
+/* Matte Blue */
+--accent-primary: #83acee;
+--accent-muted: rgba(131, 172, 238, 0.15);
+--accent-focus: #83acee;
 ```
 
 ### 3.4 Borders & Shadows
 ```css
 --border-subtle: rgba(255, 255, 255, 0.08);
 --border-strong: rgba(255, 255, 255, 0.16);
---shadow-soft: 0 8px 24px rgba(0, 0, 0, 0.30);
+--shadow-soft: 0 6px 16px rgba(0, 0, 0, 0.24);
 ```
 
 ### 3.5 Radius Scale
@@ -119,7 +119,7 @@ Reduced motion preferences (`prefers-reduced-motion: reduce`) clamp all timing v
 | Drawer | 480 × 328 | 56px companion header, full-width scrollable tool, navigation |
 | Settings | 640 × 456 | Appearance / Tools / System tabs, scrollable grouped settings |
 
-Use square top corners, 18px bottom corners, and 8px controls. Icons are normally 16px, with at least 32px hit areas. Apps use four columns; clipboard/download content uses flat rows and subtle separators. Pip uses the shared TypeScript palette: graphite chassis, dark visor, white eyes, amber warnings.
+Use square top corners, 18px bottom corners, and 8px controls. Icons are normally 16px, with at least 32px hit areas. Apps use four columns; clipboard/download content uses flat rows and subtle separators. Pip uses the shared TypeScript palette: graphite chassis, dark visor, white eyes, yellow warnings, and no glossy highlight or glow.
 
 `palette.ts` is shared by live appearance tokens and the canvas renderer. CSS provides matching startup defaults. Custom filled controls choose a contrasting foreground. Warning and error tokens remain separate from the configurable accent.
 
@@ -130,3 +130,12 @@ Click opens home; hover only changes Pip's expression. More opens an inline draw
 Use native buttons, visible focus indicators, keyboard tabs with arrow navigation, and a focus-contained settings dialog. Running countdowns are not live-announced every second. Honor both the OS reduced-motion preference and the app setting for CSS and Pip.
 
 Keep 16px transparent margins at each side and below. Grow native bounds first; shrink after the effective transition. Clamp to monitor logical dimensions and scroll constrained content.
+
+
+## 7. Matte Blue navigation and status
+
+The matte shell is opaque by default. Translucent is opt-in; its slider retains the saved opacity when the user switches styles. Selection and focus use muted blue #83ACEE over neutral surfaces. Advisory #E3C56F, urgent attention #DFA16C and errors #E38F8F always accompany text/icons rather than communicating through color alone. Avoid gradients, gloss and luminous borders.
+
+Primary navigation is Apps / Focus / Capture / More, with visible labels and a blue active state. One Back button in the shared header replaces repeated drawer close icons; Collapse remains explicitly available. More children return to More; the app picker returns to its opening Apps/Settings view. Search fields receive focus when the app picker opens. Inactive panels keep input and scroll state, and invisible Pip rendering is suspended by unmounting its header instance.
+
+Installed apps uses searchable flat rows with icons and Add/Added states. Capture uses three labeled mode buttons, a target selector, a specific action (Select area / Capture window / Capture screen), and an inline success or error message. Both fit the 480 × 328 drawer and scroll when constrained. Capture disables navigation until completed or cancelled; status confirms copying only after native clipboard transfer succeeds.

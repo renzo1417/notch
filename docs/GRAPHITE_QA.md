@@ -1,5 +1,7 @@
 # Graphite redesign verification
 
+For the subsequent matte theme, installed-app picker, and screenshot feature, see [Matte Blue QA](MATTE_BLUE_QA.md). These results describe the earlier Graphite pass.
+
 ## Automated checks
 
 - Svelte and TypeScript: zero errors or warnings.

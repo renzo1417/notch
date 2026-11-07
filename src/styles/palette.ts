@@ -4,13 +4,19 @@ export const GRAPHITE = {
   raised: "#202226",
   text: "#eceef1",
   secondary: "#adb1b8",
-  accent: "#d8dce2",
-  warning: "#e4b46a",
-  error: "#df9191",
+  accent: "#83acee",
+  warning: "#e3c56f",
+  attention: "#dfa16c",
+  error: "#e38f8f",
   chassis: "#373b41",
   ear: "#454a52",
   visor: "#121416",
 } as const;
+
+/** Matte surfaces stay opaque while retaining the user's translucent preference. */
+export function surfaceOpacity(style: "matte" | "translucent", opacity: number): number {
+  return style === "matte" ? 1 : opacity;
+}
 
 export function normalizeHex(hex: string): string {
   const value = hex.trim();

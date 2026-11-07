@@ -3,13 +3,7 @@
   import IconPlay from "../../icons/IconPlay.svelte";
   import IconPause from "../../icons/IconPause.svelte";
   import IconRotateCcw from "../../icons/IconRotateCcw.svelte";
-  import IconX from "../../icons/IconX.svelte";
 
-  interface Props {
-    onclose: () => void;
-  }
-
-  let { onclose }: Props = $props();
 
   const timer = $derived(timerStore.state);
   const formattedTime = $derived(timerStore.formattedTime);
@@ -81,19 +75,6 @@
         <span class="status-label">{timer.isPaused ? "Paused" : "Running"}</span>
       {/if}
     </div>
-
-    <button
-      type="button"
-      class="close-btn"
-      onclick={(e) => {
-        e.stopPropagation();
-        onclose();
-      }}
-      title="Close Focus panel (Esc)"
-      aria-label="Close Focus panel"
-    >
-      <IconX size={16} color="var(--text-tertiary)" />
-    </button>
   </div>
 
   <!-- Body -->

@@ -40,7 +40,7 @@
     mode === "battery" ? IconBattery : IconCheck);
 </script>
 
-<div class="activity-summary" class:compact class:warning={candidate.priority === 0} title={[label, detail].filter(Boolean).join(" · ")}>
+<div class="activity-summary" class:compact class:warning={candidate.priority === 0 || (mode === "battery" && batteryStore.isLowBattery)} class:urgent={mode === "battery" && batteryStore.isLowBattery && batteryStore.percentage <= 10} title={[label, detail].filter(Boolean).join(" · ")}>
   {#if mode !== "idle"}<span class="activity-icon" aria-hidden="true"><ActivityIcon size={16} /></span>{/if}
   <div class="activity-text">
     <span class="activity-label">{label}</span>
@@ -57,4 +57,5 @@
   .activity-label, .activity-detail { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .compact .activity-label { font-size: 13px; font-weight: 500; }
   .warning .activity-label, .warning .activity-icon { color: var(--status-warning); }
+  .urgent .activity-label, .urgent .activity-icon { color: var(--status-attention); }
 </style>

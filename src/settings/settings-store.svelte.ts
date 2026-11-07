@@ -1,4 +1,4 @@
-import { GRAPHITE, normalizeHex, accentForeground } from "../styles/palette.ts";
+import { GRAPHITE, normalizeHex, accentForeground, surfaceOpacity } from "../styles/palette.ts";
 import { SHELL_MOTION } from "../shell/shell-motion.ts";
 import { invoke } from "@tauri-apps/api/core";
 import { listen, type UnlistenFn } from "@tauri-apps/api/event";
@@ -93,19 +93,19 @@ class SettingsStore {
       "--text-primary": GRAPHITE.text,
       "--text-secondary": GRAPHITE.secondary,
       "--status-warning": GRAPHITE.warning,
+      "--status-attention": GRAPHITE.attention,
       "--status-error": GRAPHITE.error,
     };
     for (const [token, value] of Object.entries(palette)) root.style.setProperty(token, value);
 
     // Accent color live update
     root.style.setProperty("--accent-primary", normalizeHex(appearance.accentColor));
-    root.style.setProperty("--accent-muted", `${normalizeHex(appearance.accentColor)}26`); // 15% opacity hex
-    root.style.setProperty("--accent-focus", normalizeHex(appearance.accentColor)); // 40% opacity hex
+    root.style.setProperty("--accent-muted", `${normalizeHex(appearance.accentColor)}1f`);
+    root.style.setProperty("--accent-focus", normalizeHex(appearance.accentColor));
 
     root.style.setProperty("--on-accent", accentForeground(appearance.accentColor));
 
-    // Opacity
-    root.style.setProperty("--surface-root", `rgba(${GRAPHITE.surfaceRgb}, ${appearance.opacity})`);
+    root.style.setProperty("--surface-root", `rgba(${GRAPHITE.surfaceRgb}, ${surfaceOpacity(appearance.surfaceStyle, appearance.opacity)})`);
 
     // Animation intensity & Reduced motion
     const isReduced = appearance.reducedMotion || performance.batterySaverMode || window.matchMedia("(prefers-reduced-motion: reduce)").matches;

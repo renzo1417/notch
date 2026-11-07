@@ -5,13 +5,7 @@
   import IconFolder from "../../icons/IconFolder.svelte";
   import IconPlus from "../../icons/IconPlus.svelte";
   import IconTrash from "../../icons/IconTrash.svelte";
-  import IconX from "../../icons/IconX.svelte";
 
-  interface Props {
-    onclose: () => void;
-  }
-
-  let { onclose }: Props = $props();
 
   const active = $derived(downloadsStore.activeDownload);
   const completed = $derived(downloadsStore.recentCompleted);
@@ -43,19 +37,6 @@
       >
         <IconFolder size={16} color="var(--text-secondary)" />
         <span>{showFolders ? "Status" : "Folders"}</span>
-      </button>
-
-      <button
-        type="button"
-        class="close-btn"
-        onclick={(e) => {
-          e.stopPropagation();
-          onclose();
-        }}
-        title="Close Downloads (Esc)"
-        aria-label="Close Downloads"
-      >
-        <IconX size={16} color="var(--text-tertiary)" />
       </button>
     </div>
   </div>

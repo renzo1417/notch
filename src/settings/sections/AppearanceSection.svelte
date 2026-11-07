@@ -29,6 +29,17 @@
 </script>
 
 <div class="section-container" role="group" aria-label="Appearance Settings">
+  <div class="setting-row">
+    <div class="setting-info">
+      <label for="surface-style" class="setting-label">Surface style</label>
+      <span class="setting-desc">Matte stays fully opaque. Translucent lets your wallpaper show through.</span>
+    </div>
+    <select id="surface-style" class="win-select" value={appearance.surfaceStyle}
+      onchange={(event) => settingsStore.update("appearance", { surfaceStyle: event.currentTarget.value === "translucent" ? "translucent" : "matte" })}>
+      <option value="matte">Matte</option>
+      <option value="translucent">Translucent</option>
+    </select>
+  </div>
   <!-- Accent color -->
   <div class="setting-row">
     <div class="setting-info">
@@ -62,6 +73,7 @@
   </div>
 
   <!-- Notch Surface opacity -->
+  {#if appearance.surfaceStyle === "translucent"}
   <div class="setting-row">
     <div class="setting-info">
       <span class="setting-label">Surface opacity</span>
@@ -81,6 +93,7 @@
       <span class="slider-label">{Math.round(appearance.opacity * 100)}%</span>
     </div>
   </div>
+  {/if}
 
   <!-- Animation intensity -->
   <div class="setting-row">

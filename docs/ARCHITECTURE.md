@@ -75,7 +75,7 @@ WindowsNotch/
 │  │  ├─ notifications/         # Internal event notifications
 │  │  └─ launcher/              # Validated application launcher & dock
 │  ├─ settings/
-│  │  ├─ types.ts               # Configuration schema (v2) & section types
+│  │  ├─ types.ts               # Configuration schema (v3) & section types
 │  │  ├─ migrations.ts          # Schema version migration & safe error recovery
 │  │  ├─ settings-store.svelte.ts # Reactive settings store & live token updates
 │  │  ├─ SettingsView.svelte    # Compact daily-use settings modal panel
@@ -110,7 +110,7 @@ WindowsNotch/
 │  │  │  ├─ downloads.rs        # ReadDirectoryChangesW watcher
 │  │  │  ├─ launcher.rs         # Validated app launcher & icon extraction
 │  │  │  ├─ startup.rs          # Windows Run key autostart integration
-│  │  │  └─ settings.rs         # SettingsManager, schema v2, safe recovery
+│  │  │  └─ settings.rs         # SettingsManager, schema v3, safe recovery
 │  │  ├─ tray.rs                # System tray icon and menu setup
 │  │  ├─ window.rs              # Top-center window placement helper
 │  │  └─ state.rs               # Central backend state container
@@ -234,7 +234,7 @@ To prevent blocking underlying Windows applications (such as browser tabs and ti
 ### 5.3 Completion Lifecycle & Companion Reaction
 - **Internal Notification (P1):** Natural countdown completion pushes an internal notification candidate into `ContextEngine` at `P1_COMPLETION` with a $4.5\,\text{s}$ expiration window. This temporarily supersedes both coding and timer contexts, then seamlessly restores the prior state upon expiration.
 - **Companion Emotional Synchronization:**
-  - While timer is running (`isRunning && !isPaused`), companion Pip assumes a determined `focused` visor expression (`#2dd4bf` ice teal visor slits).
+  - While timer is running (`isRunning && !isPaused`), companion Pip assumes a determined `focused` visor expression (soft white focused visor slits).
   - Upon session completion, companion Pip triggers a brief celebratory hop and cheerful ear perks (`celebrate` for $3.5\,\text{s}$).
   - Stopping or resetting returns companion Pip to default autonomous `idle` behavior.
 
@@ -249,18 +249,18 @@ To prevent blocking underlying Windows applications (such as browser tabs and ti
 - **Decoupled Arguments:** The executable path and arguments array are stored and transmitted as separate typed fields.
 
 ### 6.2 Shortcut Resolution & Native Icon Extraction
-- **Windows Shortcuts (`.lnk`):** Evaluated via COM `IShellLinkW` and `IPersistFile` interfaces to automatically resolve target binary paths and arguments.
+- **Windows Shortcuts (`.lnk`):** Retained as shortcut targets and shell-opened so Windows preserves quoted arguments and working directory.
 - **In-Memory 32-bit Icon Extraction:** Extracted via Win32 `SHGetFileInfoW` (`SHGFI_ICON | SHGFI_LARGEICON`), drawn to a memory GDI device context, and converted directly to base64 Data URLs (`data:image/bmp;base64,...`). No network requests, no marketplace, and no third-party icon scrapers.
 
 ### 6.3 Local-First Lightweight Persistence
 - **Storage Strategy:** Pinned applications are stored locally in `<AppData>/launcher_apps.json` via Rust `LauncherManager`.
 - **Order & Enabled Flags:** Supports custom ordering and toggleable enablement.
-- **Path Verification:** Upon startup and query, every registered application's path is verified on disk (`exists: bool`).
+- **Path Verification:** Upon startup and query, file-based targets are checked on disk and packaged targets are checked against AppsFolder (`exists: bool`).
 
 ### 6.4 Compact Dock & Context Priority Integration
 - **Apps Layout:** A four-column grid in the focused Apps drawer, with real icons and a scrolling list when needed.
 - **Priority Tier:** Manually opened launcher surfaces register at `P5_USER_SURFACE`. Background coding sessions (`P4`) and active timers (`P2`) take priority in the summary without changing the open drawer.
-- **Broken App Handling:** Missing or moved application binaries visually display a warning indicator with immediate `Locate` and `Remove` actions.
+- **Broken App Handling:** Missing or moved application binaries visually display a warning indicator with immediate `Replace app` and `Remove` actions.
 - **Launch Feedback & Coordinated Shell Collapse:**
   - On launch, companion Pip reacts with a cheerful expression (`happy`).
   - An internal completion notification briefly displays the launch confirmation (`P1_COMPLETION`).
@@ -292,4 +292,21 @@ The current shell uses explicit navigation independently of the context engine. 
 
 Visible geometries are compact 304×44, home 480×160, drawers 480×328, and settings 640×456. Native windows add 32px width / 16px height for shadows, clamp to monitor logical bounds, and stay top-centered. Monitor changes preserve the active state; saved monitor and always-on-top preferences apply at startup.
 
-Settings schema 2 migrates the legacy default blue to graphite once, preserving custom accents and all other fields. Both TypeScript and Rust implement that migration. Existing settings sections are presented under Appearance, Tools, and System without changing their stored field names.
+Settings schema 3 adds matte/translucent surface styles and migrates the pre-v3 default silver to muted blue once, preserving other custom accents, saved opacity and unrelated fields. Both TypeScript and Rust implement matching recovery.
+
+
+## Matte Blue native services
+
+### Launcher catalog
+
+The existing bare-array launcher file accepts optional tagged launch targets. Legacy executable fields remain readable. Direct executables use separate path/argument/working-directory fields, shortcuts use ShellExecuteEx without command-string interpolation, and packaged apps use Windows application activation. Catalog discovery runs off the UI thread using Start Menu known folders and AppsFolder, never a full-drive scan. Catalog and icon caches are memory-only and refresh on request.
+
+Commands: `list_installed_apps(refresh)`, `get_installed_app_icon(catalogId)`, and `pin_installed_app(catalogId, replaceId?)`. Existing launch/pin-management commands remain available. The front-end shared picker is opened through `shellActions.requestAppPicker(replaceId?)`; shell state appPicker remembers its Apps/Settings origin.
+
+### Screenshot capture
+
+`AppState` owns an Arc<CaptureManager> with a single-operation gate and request-scoped cancellation. Bounded early-cancel/completed-ID tracking prevents queued cancellation loss or a late cancellation affecting the next operation. Commands `list_capture_targets`, `start_capture(mode, targetId, requestId)` and `cancel_capture(requestId)` use blocking workers for native work. Target handles are resolved against fresh eligible target enumeration; pixels never cross IPC. Results contain copied/cancelled status and dimensions.
+
+A capture guard hides and restores the main window. A temporary WGC/D3D11 frame pool obtains one frame with a bounded wait; captured pixels are converted from FP16 to SDR BGRA. The session closes before any area-selection overlay is shown. A native Win32 window displays the frozen image with a keyboard/mouse rectangle selector in monitor physical coordinates. CF_DIBV5 clipboard publication uses bounded contention retries and correct global-memory ownership transfer. Cancellation before transfer leaves clipboard contents intact. All capture-owned native resources and overlays are released; no idle capture loop or screenshot persistence is introduced.
+
+The front-end capture store blocks navigation/auto-collapse while awaiting a result. Visited tool panels and Settings remain mounted hidden to preserve state, while the inactive header Pip is unmounted. Shared Back navigation follows utility and picker parents; set_notch_state keeps its signature and recognizes appPicker/capture with existing drawer bounds.

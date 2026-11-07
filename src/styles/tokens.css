@@ -1,6 +1,6 @@
 :root {
   /* Surfaces */
-  --surface-root: rgba(21, 22, 24, 0.96);
+  --surface-root: #151618;
   --surface-raised: #202226;
   --surface-hover: rgba(255, 255, 255, 0.07);
   --surface-active: rgba(255, 255, 255, 0.12);
@@ -13,16 +13,17 @@
   /* Borders & Shadows */
   --border-subtle: rgba(255, 255, 255, 0.08);
   --border-strong: rgba(255, 255, 255, 0.16);
-  --shadow-soft: 0 8px 24px rgba(0, 0, 0, 0.30);
+  --shadow-soft: 0 6px 16px rgba(0, 0, 0, 0.24);
 
-  /* Graphite selection; warnings and errors have separate semantic colors. */
-  --accent-primary: #d8dce2;
-  --accent-muted: rgba(216, 220, 226, 0.12);
-  --accent-focus: #d8dce2;
+  /* Muted blue interaction; warm colors communicate attention and errors. */
+  --accent-primary: #83acee;
+  --accent-muted: rgba(131, 172, 238, 0.12);
+  --accent-focus: #83acee;
 
   --on-accent: #151618;
-  --status-warning: #e4b46a;
-  --status-error: #df9191;
+  --status-warning: #e3c56f;
+  --status-attention: #dfa16c;
+  --status-error: #e38f8f;
   --status-success: var(--text-primary);
   --status-info: var(--text-secondary);
 

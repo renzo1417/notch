@@ -32,7 +32,7 @@ pub fn get_dimensions_for_state(state: &str) -> (f64, f64) {
     match state {
         "dormant" => (192.0, 48.0),
         "expanded" => (EXPANDED_WINDOW_WIDTH, EXPANDED_WINDOW_HEIGHT),
-        "apps" | "launcher" => (EXPANDED_WINDOW_WIDTH, APPS_WINDOW_HEIGHT),
+        "apps" | "launcher" | "appPicker" | "capture" => (EXPANDED_WINDOW_WIDTH, APPS_WINDOW_HEIGHT),
         "focus" | "timer" => (EXPANDED_WINDOW_WIDTH, FOCUS_WINDOW_HEIGHT),
         "clipboard" => (EXPANDED_WINDOW_WIDTH, CLIPBOARD_WINDOW_HEIGHT),
         "downloads" | "download" => (EXPANDED_WINDOW_WIDTH, DOWNLOADS_WINDOW_HEIGHT),
@@ -51,7 +51,7 @@ mod tests {
         assert_eq!(get_dimensions_for_state("compact"), (336.0, 60.0));
         assert_eq!(get_dimensions_for_state("expanded"), (512.0, 176.0));
         assert_eq!(get_dimensions_for_state("settings"), (672.0, 472.0));
-        for state in ["apps", "launcher", "timer", "focus", "download", "downloads", "clipboard", "utilities", "battery", "panel"] {
+        for state in ["apps", "launcher", "appPicker", "capture", "timer", "focus", "download", "downloads", "clipboard", "utilities", "battery", "panel"] {
             assert_eq!(get_dimensions_for_state(state), (512.0, 344.0));
         }
     }

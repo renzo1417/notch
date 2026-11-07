@@ -12,7 +12,7 @@ PROJECT_NOTCH is an original desktop companion engineered specifically for Windo
 
 Key design goals:
 - Quiet by default: Disappears visually into the screen bezel during idle periods.
-- Responsive on interaction: Smoothly expands on hover or focus into compact utility panels.
+- Responsive on interaction: Click or keyboard activation expands into focused utility drawers; hover only changes Pip’s expression.
 - Highly optimized: Engineered with event-driven Windows APIs and lightweight canvas rendering to run continuously with minimal CPU and memory impact.
 - Local-first and private: Zero telemetry, zero network tracking, no third-party cloud sync, and runs strictly with standard user privileges.
 
@@ -60,13 +60,14 @@ Orchestrates competing background events into a single unified activity feed usi
 5. P5: Idle Ambient Mode / Media Playback (Playback state, track title, and artist)
 
 ### Native Utilities
-- Media Transport: Real-time track metadata, playback progress, play/pause/skip toggles, and volume/seek controls.
+- Media Transport: Real-time track metadata, available play/pause and skip controls.
 - Focus Timer: Pomodoro presets and custom countdowns with drift-free timestamps.
 - Downloads Monitor: Tracks active file downloads across monitored directories with open-file shortcuts.
 - Clipboard History: Captures text copies with deduplication, fast search, and one-click restoration.
 - Power Telemetry: Battery gauge, charging status indicators, and low-power conservation triggers.
-- App Launcher: Customizable quick-launch dock for frequently used applications and tools.
-- Settings Panel: Comprehensive 9-section configuration suite with accent color customization, panel toggles, and automatic schema migrations.
+- App Launcher: Search installed Windows and Store apps, pin Start Menu shortcuts, or browse for portable executables. Replace missing pins without hunting for protected application files.
+- Screenshot Capture: Choose Area, Window, or Screen and copy an image to the clipboard using native Windows capture APIs. Area selection supports mouse and keyboard.
+- Settings Panel: Comprehensive 9-section configuration suite grouped under Appearance, Tools, and System, with matte/translucent surfaces, accent customization, and schema migrations.
 
 ---
 
@@ -75,6 +76,7 @@ Orchestrates competing background events into a single unified activity feed usi
 The visual layer follows strict design tokens defined in the Graphite design specification:
 - Single-layer surfaces: Clean, flat containers with subtle 1px border dividers (`rgba(255, 255, 255, 0.08)`).
 - No nested cards: Eliminates "card inside a card" structures in favor of consistent padding and clean horizontal rows.
+- Matte surfaces: Opaque graphite by default, with muted blue selections, yellow/orange attention states, and red errors. Translucency is opt-in.
 - No decorative gradients: Uses deliberate charcoal and graphite surfaces rather than saturated purple or blue novelty gradients.
 - Consistent typography: Built with system typography (`Segoe UI Variable`, `Segoe UI`) with strict tabular numerals for counters and clocks.
 - Unified SVG iconography: 100% vector-based geometric icons with matching 1.75px stroke widths across all modules. No emojis are used in the user interface.

@@ -48,6 +48,7 @@ export function migrateSettings(raw: unknown): SettingsConfig {
   // 2. Appearance section recovery
   if (data.appearance && typeof data.appearance === "object") {
     const app = data.appearance as Record<string, unknown>;
+    result.appearance.surfaceStyle = app.surfaceStyle === "translucent" ? "translucent" : "matte";
     result.appearance.accentColor = isValidHexColor(app.accentColor)
       ? (app.accentColor as string).trim()
       : result.appearance.accentColor;
@@ -119,6 +120,9 @@ export function migrateSettings(raw: unknown): SettingsConfig {
   }
 
   if (version < 2 && result.appearance.accentColor.toLowerCase() === "#3b82f6") {
+    result.appearance.accentColor = DEFAULT_SETTINGS_CONFIG.appearance.accentColor;
+  }
+  if (version < 3 && result.appearance.accentColor.toLowerCase() === "#d8dce2") {
     result.appearance.accentColor = DEFAULT_SETTINGS_CONFIG.appearance.accentColor;
   }
 

@@ -7,13 +7,7 @@
   import IconTrash from "../../icons/IconTrash.svelte";
   import IconPause from "../../icons/IconPause.svelte";
   import IconPlay from "../../icons/IconPlay.svelte";
-  import IconX from "../../icons/IconX.svelte";
 
-  interface Props {
-    onclose: () => void;
-  }
-
-  let { onclose }: Props = $props();
 
   const items = $derived(clipboardStore.items);
 
@@ -68,19 +62,6 @@
           <IconTrash size={16} color="var(--text-secondary)" />
         </button>
       {/if}
-
-      <button
-        type="button"
-        class="close-btn"
-        onclick={(e) => {
-          e.stopPropagation();
-          onclose();
-        }}
-        title="Close Clipboard (Esc)"
-        aria-label="Close Clipboard"
-      >
-        <IconX size={16} color="var(--text-tertiary)" />
-      </button>
     </div>
   </div>
 

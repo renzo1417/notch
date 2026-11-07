@@ -134,7 +134,7 @@ export class MascotRenderer {
   }
 
   /**
-   * Main chassis body: dark slate titanium rounded squircle with rim highlight.
+   * Matte graphite chassis with a restrained outline.
    */
   private drawChassis(
     ctx: CanvasRenderingContext2D,
@@ -156,21 +156,10 @@ export class MascotRenderer {
     ctx.lineWidth = 1;
     ctx.stroke();
 
-    // Top specular rim highlight
-    ctx.save();
-    ctx.beginPath();
-    this.roundedRect(ctx, x + 1, y + 1, chassisW - 2, 8, radius - 1);
-    ctx.clip();
-    const rimGrad = ctx.createLinearGradient(0, y, 0, y + 6);
-    rimGrad.addColorStop(0, "rgba(255, 255, 255, 0.12)");
-    rimGrad.addColorStop(1, "rgba(255, 255, 255, 0.0)");
-    ctx.fillStyle = rimGrad;
-    ctx.fillRect(x, y, chassisW, 7);
-    ctx.restore();
   }
 
   /**
-   * Visor: Dark glossy inner display faceplate.
+   * Visor: flat dark display faceplate.
    */
   private drawVisor(ctx: CanvasRenderingContext2D, centerY: number): void {
     const visorW = 38;
@@ -189,19 +178,6 @@ export class MascotRenderer {
     ctx.lineWidth = 1;
     ctx.stroke();
 
-    // Subtle diagonal gloss reflection across upper right
-    ctx.save();
-    ctx.beginPath();
-    this.roundedRect(ctx, x, y, visorW, visorH, radius);
-    ctx.clip();
-
-    const gloss = ctx.createLinearGradient(x + 5, y - 5, x + visorW, y + visorH);
-    gloss.addColorStop(0, "rgba(255, 255, 255, 0.07)");
-    gloss.addColorStop(0.35, "rgba(255, 255, 255, 0.02)");
-    gloss.addColorStop(0.5, "rgba(255, 255, 255, 0.0)");
-    ctx.fillStyle = gloss;
-    ctx.fillRect(x, y, visorW, visorH);
-    ctx.restore();
   }
 
   /**
@@ -458,7 +434,7 @@ export class MascotRenderer {
   }
 
   /**
-   * Helper to draw a luminous rounded pill eye with subtle glow.
+   * Soft white or status-colored eyes without glossy cores or glow.
    */
   private drawGlowingPill(
     ctx: CanvasRenderingContext2D,
@@ -469,21 +445,13 @@ export class MascotRenderer {
     r: number,
     color: string
   ): void {
-    // Ambient soft glow
     ctx.save();
-    ctx.shadowColor = color;
-    ctx.shadowBlur = 1.5;
+    ctx.shadowBlur = 0;
     ctx.fillStyle = color;
     this.roundedRect(ctx, x - w / 2, y - h / 2, w, h, r);
     ctx.fill();
     ctx.restore();
 
-    // Inner bright core
-    ctx.fillStyle = "#ffffff";
-    ctx.globalAlpha = 0.35;
-    this.roundedRect(ctx, x - w / 4, y - h / 4, w / 2, h / 2, r / 2);
-    ctx.fill();
-    ctx.globalAlpha = 1.0;
   }
 
   /**

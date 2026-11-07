@@ -97,7 +97,7 @@ Do not use Coucou/Mochi/Apple branding.
 The approved graphite redesign replaces the permanent three-zone layout.
 
 - Compact: Pip, one activity summary, and an active media indicator.
-- Home: companion header, current activity, available music controls, and Apps / Focus / More navigation.
+- Home: companion header, current activity, available music controls, and Apps / Focus / Capture / More navigation.
 - Tool drawers: a compact companion header above one full-width tool. Active media stays accessible through artwork and play/pause in the header.
 - More opens an inline utility drawer containing Clipboard, Downloads, Battery when available, and Settings.
 - Settings groups all existing fields under Appearance (appearance / mascot), Tools (music / timer / clipboard / downloads / apps), and System (general / performance).
@@ -252,7 +252,7 @@ Default theme: dark.
 Suggested tokens:
 
 ```css
---surface-root: rgba(21, 22, 24, 0.96);
+--surface-root: #151618;
 --surface-raised: #202226;
 --surface-hover: rgba(255, 255, 255, 0.07);
 
@@ -264,7 +264,7 @@ Suggested tokens:
 --shadow-soft: rgba(0, 0, 0, 0.30);
 ```
 
-Accent defaults to soft silver `#d8dce2`; custom accents remain configurable. Use muted amber `#e4b46a` for warnings and muted red `#df9191` for errors. Ordinary activity categories use icons and neutral text.
+Accent defaults to muted blue `#83acee`; custom accents remain configurable. Use yellow `#e3c56f` for advisory states, orange `#dfa16c` for urgent attention, and red `#e38f8f` for errors. Ordinary activity categories use icons and neutral text. Matte is opaque; Translucent is an explicit opt-in using the retained opacity setting. Pip has flat graphite surfaces without gloss or glow.
 
 ## Typography
 
@@ -349,12 +349,12 @@ Compact is 304 × 44 logical pixels. It shows Pip, one current summary, and an a
 |---|---|---|
 | Compact | 304 × 44 | 336 × 60 |
 | Home | 480 × 160 | 512 × 176 |
-| Apps, Focus, Clipboard, Downloads, Battery, More | 480 × 328 | 512 × 344 |
+| Apps, Installed apps, Focus, Capture, Clipboard, Downloads, Battery, More | 480 × 328 | 512 × 344 |
 | Settings | 640 × 456 | 672 × 472 |
 
 All shells stay attached to the top edge, with square top corners and 18px lower corners. Retain 16px transparent space at each side and below; clamp the native window to the selected monitor in logical units. Content scrolls within constrained heights.
 
-Back or Escape returns from a drawer/settings to home; Escape on home collapses. Restore focus to the opening control. Home auto-collapses after the configured delay after pointer exit; keyboard interaction pauses this timer. Drawers and settings stay open until dismissed.
+Back or Escape returns from a More child (including Settings) to More, from a primary drawer to home, and from home to compact. Installed apps returns to its opening Apps or Settings view. Native capture selection cancels back to Capture. Restore focus to the opening control. Home auto-collapses after the configured delay after pointer exit; keyboard interaction pauses this timer. Drawers and settings stay open until dismissed.
 
 Native bounds grow before content expands and shrink after the effective CSS transition. Serialize native resizes and cancel pending shrink delays when a newer request arrives. Reduced motion makes these delays zero.
 
@@ -1280,3 +1280,26 @@ Do not blindly use outdated snippets.
 The notch should disappear from attention when nothing matters and become useful immediately when something does.
 
 **Quiet by default. Expressive on interaction. Useful on events. Lightweight enough to run all day.**
+
+
+# 42. Matte Blue — Installed Apps and Capture
+
+## Navigation and settings
+
+Apps / Focus / Capture / More remain visible in expanded home and drawers (Apps honors its visibility setting). A shared header provides one Back control and an explicit Collapse control. Visited panels remain mounted but hidden to retain input, list scroll, and Settings category state; the inactive header mascot is unmounted. Context priorities update only the summary. Capture in progress suspends auto-collapse and navigation.
+
+Settings schema 3 adds `appearance.surfaceStyle` (`matte` by default, or `translucent`). Matte renders at opacity 1 while retaining the saved opacity for Translucent. Pre-v3 default silver becomes muted blue once; other valid custom accents and unrelated settings survive. TypeScript and Rust must agree.
+
+## Installed apps
+
+Add app opens a searchable Installed apps drawer, shared with Settings and broken-pin replacement. Discovery enumerates current-user AppsFolder plus current-user/common Start Menu Programs shortcuts, with an in-memory cache and explicit Refresh. No full-drive scans or elevation. Results show Add/Added and lazy native icons. Browse executable or shortcut remains available for portable apps.
+
+Launcher persistence remains an array in `launcher_apps.json`. An optional tagged `target` supports executable (path, arguments, working directory), shortcut (retained `.lnk` path), or packaged app (AUMID). Legacy entries without target remain valid. Shortcuts are shell-opened, not whitespace-split into process arguments. Packaged targets activate through their Windows application identity. Launch identities, not names, determine duplicates; pin IDs, ordering and enablement survive replacement.
+
+## Screenshots
+
+Capture offers Area / Window / Screen, defaulting to Area. Monitor selection follows the configured notch monitor, then primary. Window selection lists eligible visible non-minimized application windows. Capture copies an image to the clipboard; it does not save files or create image history.
+
+Rust acquires one frame using Windows.Graphics.Capture and Direct3D11, checks runtime support, and handles HDR-to-SDR conversion. Area selection uses a temporary native overlay over a frozen monitor image, with physical pixel cropping, drag selection, arrow movement, Shift+arrow resizing, Enter confirmation and Esc cancellation. The notch is hidden and the compositor flushed before capture. Sessions close before the selection overlay appears. Neither window is included in the screenshot.
+
+Allow one capture, bounded frame acquisition and clipboard retries, cancellation and RAII resource cleanup. Revalidate monitor/window targets immediately before use. Restore notch visibility/focus on all exit paths. Image bytes stay native and are transferred to Windows as CF_DIBV5; existing clipboard history remains text-only. Cancellation before copying preserves the clipboard. Windows capture restrictions and indicators remain intact; protected content may be blank/unavailable. No global shortcut, recorder, OCR, annotation, persistence or cloud service is added.

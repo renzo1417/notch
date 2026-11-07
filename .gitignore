@@ -13,6 +13,8 @@ dist/
 dist-ssr/
 build/
 .vite/
+.vite-temp/
+vite.config.*.timestamp-*
 .svelte-kit/
 *.tsbuildinfo
 
@@ -25,6 +27,7 @@ src-tauri/WixTools/
 **/*.rs.bk
 *.rs.bk
 Cargo.lock.orig
+Cargo.lock.bk
 
 # Windows Executables, Binaries & Packaging
 *.exe
@@ -109,6 +112,9 @@ $RECYCLE.BIN/
 # AI Agents & IDE Tooling
 .agents/
 .gemini/
+.antigravity/
+.windsurf/
+.zed/
 
 # Application Local Runtime Data & State
 settings.json

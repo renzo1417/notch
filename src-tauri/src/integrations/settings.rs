@@ -7,7 +7,7 @@ use tauri::{AppHandle, Emitter, Manager};
 use crate::integrations::startup;
 use crate::window;
 
-pub const CURRENT_SCHEMA_VERSION: u32 = 2;
+pub const CURRENT_SCHEMA_VERSION: u32 = 3;
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 #[serde(rename_all = "camelCase")]
@@ -30,8 +30,21 @@ impl Default for GeneralConfig {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[serde(rename_all = "lowercase")]
+pub enum SurfaceStyle {
+    Matte,
+    Translucent,
+}
+
+impl Default for SurfaceStyle {
+    fn default() -> Self { Self::Matte }
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 #[serde(rename_all = "camelCase")]
 pub struct AppearanceConfig {
+    #[serde(default)]
+    pub surface_style: SurfaceStyle,
     pub accent_color: String,
     pub opacity: f32,
     pub animation_intensity: f32,
@@ -41,7 +54,8 @@ pub struct AppearanceConfig {
 impl Default for AppearanceConfig {
     fn default() -> Self {
         Self {
-            accent_color: "#d8dce2".to_string(),
+            surface_style: SurfaceStyle::Matte,
+            accent_color: "#83acee".to_string(),
             opacity: 0.96,
             animation_intensity: 1.0,
             reduced_motion: false,
@@ -245,6 +259,9 @@ pub fn migrate_settings_json(raw: serde_json::Value) -> SettingsConfig {
             if let Ok(app) = serde_json::from_value::<AppearanceConfig>(val.clone()) {
                 config.appearance = app;
             } else if let Some(obj) = val.as_object() {
+                if let Some(style) = obj.get("surfaceStyle").and_then(|v| v.as_str()) {
+                    config.appearance.surface_style = if style == "translucent" { SurfaceStyle::Translucent } else { SurfaceStyle::Matte };
+                }
                 if let Some(c) = obj.get("accentColor").and_then(|v| v.as_str()) {
                     config.appearance.accent_color = c.to_string();
                 }
@@ -323,6 +340,9 @@ pub fn migrate_settings_json(raw: serde_json::Value) -> SettingsConfig {
         }
 
         if version < 2 && config.appearance.accent_color.trim().eq_ignore_ascii_case("#3b82f6") {
+            config.appearance.accent_color = AppearanceConfig::default().accent_color;
+        }
+        if version < 3 && config.appearance.accent_color.trim().eq_ignore_ascii_case("#d8dce2") {
             config.appearance.accent_color = AppearanceConfig::default().accent_color;
         }
 
@@ -459,14 +479,15 @@ mod tests {
     use serde_json::json;
 
     #[test]
-    fn graphite_migrates_legacy_blue_without_resetting_preferences() {
+    fn matte_migrates_legacy_blue_without_resetting_preferences() {
         let config = migrate_settings_json(json!({
             "schemaVersion": 1,
             "appearance": { "accentColor": "#3B82F6", "opacity": 0.82 },
             "general": { "selectedMonitor": "Display 2" }
         }));
-        assert_eq!(config.schema_version, 2);
-        assert_eq!(config.appearance.accent_color, "#d8dce2");
+        assert_eq!(config.schema_version, 3);
+        assert_eq!(config.appearance.accent_color, "#83acee");
+        assert_eq!(config.appearance.surface_style, SurfaceStyle::Matte);
         assert!((config.appearance.opacity - 0.82).abs() < 0.001);
         assert_eq!(config.general.selected_monitor.as_deref(), Some("Display 2"));
         assert!(!config.clipboard.persist_history);
@@ -475,9 +496,32 @@ mod tests {
 
     #[test]
     fn custom_and_current_version_accents_survive() {
-        for (version, color) in [(1, "#f08"), (2, "#3b82f6")] {
+        for (version, color) in [(1, "#f08"), (2, "#3b82f6"), (3, "#d8dce2")] {
             let config = migrate_settings_json(json!({ "schemaVersion": version, "appearance": { "accentColor": color } }));
             assert_eq!(config.appearance.accent_color, color);
         }
+    }
+
+    #[test]
+    fn matte_migration_preserves_saved_opacity_and_current_surface_style() {
+        let config = migrate_settings_json(json!({
+            "schemaVersion": 2,
+            "appearance": { "accentColor": "#D8DCE2", "opacity": 0.82 },
+            "general": { "selectedMonitor": "Display 2" }
+        }));
+        assert_eq!(config.appearance.accent_color, "#83acee");
+        assert_eq!(config.appearance.surface_style, SurfaceStyle::Matte);
+        assert!((config.appearance.opacity - 0.82).abs() < 0.001);
+        assert_eq!(config.general.selected_monitor.as_deref(), Some("Display 2"));
+        assert_eq!(migrate_settings_json(serde_json::to_value(&config).unwrap()), config);
+
+        let translucent = migrate_settings_json(json!({
+            "schemaVersion": 3,
+            "appearance": { "surfaceStyle": "translucent", "opacity": 0.84 }
+        }));
+        assert_eq!(translucent.appearance.surface_style, SurfaceStyle::Translucent);
+        assert!((translucent.appearance.opacity - 0.84).abs() < 0.001);
+        let invalid = migrate_settings_json(json!({ "appearance": { "surfaceStyle": "unknown" } }));
+        assert_eq!(invalid.appearance.surface_style, SurfaceStyle::Matte);
     }
 }

@@ -5,7 +5,7 @@
 
 import { GRAPHITE } from "../styles/palette.ts";
 
-export const SETTINGS_SCHEMA_VERSION = 2;
+export const SETTINGS_SCHEMA_VERSION = 3;
 
 export interface GeneralSettings {
   /** Launch application on Windows startup */
@@ -19,6 +19,8 @@ export interface GeneralSettings {
 }
 
 export interface AppearanceSettings {
+  /** Opaque matte surface, or optional wallpaper translucency. */
+  surfaceStyle: "matte" | "translucent";
   /** Primary accent color hex code */
   accentColor: string;
   /** Notch surface opacity (0.80 - 1.00) */
@@ -120,12 +122,12 @@ export type SettingsSection =
   | "performance";
 
 export const ACCENT_COLOR_PRESETS: Array<{ label: string; value: string }> = [
-  { label: "Graphite", value: GRAPHITE.accent },
+  { label: "Matte blue", value: GRAPHITE.accent },
+  { label: "Silver", value: "#d8dce2" },
+  { label: "Muted red", value: GRAPHITE.error },
+  { label: "Muted orange", value: GRAPHITE.attention },
+  { label: "Muted yellow", value: GRAPHITE.warning },
   { label: "Windows Blue", value: "#3b82f6" },
-  { label: "Emerald", value: "#10b981" },
-  { label: "Violet", value: "#8b5cf6" },
-  { label: "Amber", value: "#f59e0b" },
-  { label: "Rose", value: "#f43f5e" },
   { label: "Slate", value: "#64748b" },
 ];
 
@@ -138,6 +140,7 @@ export const DEFAULT_SETTINGS_CONFIG: SettingsConfig = {
     autoCollapseDelayMs: 4000,
   },
   appearance: {
+    surfaceStyle: "matte",
     accentColor: GRAPHITE.accent,
     opacity: 0.96,
     animationIntensity: 1.0,

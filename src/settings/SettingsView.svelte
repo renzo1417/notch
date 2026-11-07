@@ -13,7 +13,7 @@
   import IconChevronLeft from "../icons/IconChevronLeft.svelte";
   import IconRotateCcw from "../icons/IconRotateCcw.svelte";
 
-  let { onclose }: { onclose: () => void } = $props();
+  let { onclose, oncollapse }: { onclose: () => void; oncollapse: () => void } = $props();
   const groups = [
     { id: "appearance", label: "Appearance", sections: [{ label: "Appearance", component: AppearanceSection }, { label: "Pip", component: MascotSection }] },
     { id: "tools", label: "Tools", sections: [{ label: "Music", component: MusicSection }, { label: "Focus", component: TimerSection }, { label: "Clipboard", component: ClipboardSection }, { label: "Downloads", component: DownloadsSection }, { label: "Apps", component: AppsSection }] },
@@ -52,9 +52,10 @@
 
 <div bind:this={dialog} class="settings-modal" role="dialog" aria-modal="true" aria-labelledby="settings-title" tabindex="-1" onkeydown={trapFocus}>
   <header class="settings-header">
-    <button type="button" class="settings-back" onclick={onclose} aria-label="Back to home" title="Back to home (Esc)" data-focus="settings"><IconChevronLeft size={16} /></button>
+    <button type="button" class="settings-back" onclick={onclose} aria-label="Back to More" title="Back to More (Esc)" data-focus="settings"><IconChevronLeft size={16} /></button>
     <h1 id="settings-title">Settings</h1>
     <span class="save-feedback" role="status">{settingsStore.saveError || (settingsStore.isSaving ? "Saving…" : "")}</span>
+    <button type="button" class="settings-back" aria-label="Collapse notch" onclick={oncollapse}>−</button>
     <button type="button" class="reset-settings" onclick={() => settingsStore.resetToDefaults()} title="Reset all settings to defaults"><IconRotateCcw size={16} /><span>Defaults</span></button>
   </header>
   <div class="settings-nav" role="tablist" aria-label="Settings categories">
@@ -80,7 +81,7 @@
   .settings-back:hover, .reset-settings:hover { background: var(--surface-hover); color: var(--text-primary); }
   .settings-nav { display: flex; gap: 8px; padding: 0 20px 8px; border-bottom: 1px solid var(--border-subtle); flex: none; }
   .settings-nav button { flex: 1; min-height: 32px; border-radius: 8px; font-size: 13px; color: var(--text-secondary); }
-  .settings-nav button.active, .settings-nav button:hover { background: var(--surface-hover); color: var(--text-primary); }
+  .settings-nav button.active, .settings-nav button:hover { background: var(--accent-muted); color: var(--accent-primary); }
   .settings-body { flex: 1; min-height: 0; overflow-y: auto; overflow-x: hidden; padding: 8px 24px 20px; outline-offset: -3px; }
   .settings-section + .settings-section { margin-top: 20px; }
   h2 { font-size: 13px; font-weight: 600; padding: 12px 0 4px; color: var(--text-secondary); }

@@ -8,6 +8,8 @@ export type NotchShellState =
   | "peek"
   | "expanded"
   | "apps"
+  | "appPicker"
+  | "capture"
   | "focus"
   | "clipboard"
   | "downloads"
@@ -34,6 +36,8 @@ export const SHELL_STATE_DIMENSIONS: Record<NotchShellState, ShellDimensions> = 
   peek: dimensions(304, 44),
   expanded: dimensions(480, 160),
   apps: dimensions(480, 328),
+  appPicker: dimensions(480, 328),
+  capture: dimensions(480, 328),
   focus: dimensions(480, 328),
   clipboard: dimensions(480, 328),
   downloads: dimensions(480, 328),
@@ -50,7 +54,9 @@ export function normalizeShellState(state: NotchShellState): NotchShellState {
   return state;
 }
 
-export function backState(state: NotchShellState): NotchShellState {
+export function backState(state: NotchShellState, pickerOrigin: NotchShellState = "apps"): NotchShellState {
+  if (state === "appPicker") return pickerOrigin;
+  if (["clipboard", "downloads", "battery", "settings"].includes(state)) return "utilities";
   return state === "expanded" || state === "compact" ? "compact" : "expanded";
 }
 
@@ -58,6 +64,16 @@ type CollapseListener = () => void;
 
 class ShellActionBus {
   private collapseListeners = new Set<CollapseListener>();
+  private appPickerListeners = new Set<(replaceId?: string) => void>();
+
+  onAppPicker(fn: (replaceId?: string) => void): () => void {
+    this.appPickerListeners.add(fn);
+    return () => { this.appPickerListeners.delete(fn); };
+  }
+
+  requestAppPicker(replaceId?: string): void {
+    for (const fn of this.appPickerListeners) fn(replaceId);
+  }
 
   onCollapse(fn: CollapseListener): () => void {
     this.collapseListeners.add(fn);

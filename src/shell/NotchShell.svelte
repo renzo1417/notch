@@ -4,6 +4,7 @@
   import { listen, type UnlistenFn } from "@tauri-apps/api/event";
   import CompactNotch from "./CompactNotch.svelte";
   import ExpandedNotch from "./ExpandedNotch.svelte";
+  import { captureStore } from "../modules/capture/capture-store.svelte";
   import SettingsView from "../settings/SettingsView.svelte";
   import { backState, SHELL_STATE_DIMENSIONS, shellActions, type NotchShellState } from "../app/state/shell-state";
   import { ShellTransition } from "./shell-transition";
@@ -22,6 +23,12 @@
   let pointerInside = false;
   let keyboardActive = false;
   let autoCollapse: ReturnType<typeof setTimeout> | null = null;
+  let hasOpened = $state(false);
+  let hasSettings = $state(false);
+  let pickerOrigin: NotchShellState = "apps";
+  let pickerReplaceId = $state<string | undefined>();
+  const savedFocus = new Map<NotchShellState, HTMLElement>();
+  let unsubscribePicker: (() => void) | undefined;
   let unsubscribeCollapse: (() => void) | undefined;
   let unlistenSettings: UnlistenFn | undefined;
   let initialResize: Promise<void> = Promise.resolve();
@@ -41,7 +48,7 @@
   function startAutoCollapse() {
     clearAutoCollapse();
     const delay = settingsStore.state.general.autoCollapseDelayMs;
-    if (shellState === "expanded" && !pointerInside && !(keyboardActive && shell?.contains(document.activeElement)) && delay > 0) {
+    if (!captureStore.busy && shellState === "expanded" && !pointerInside && !(keyboardActive && shell?.contains(document.activeElement)) && delay > 0) {
       autoCollapse = setTimeout(() => { void navigate("compact"); }, delay);
     }
   }
@@ -66,14 +73,24 @@
     const previous = shellState;
     closeSurface(previous);
     shellState = state;
+    if (state !== "compact") hasOpened = true;
+    if (state === "settings") hasSettings = true;
     openSurface(state);
     void tick().then(() => {
       if (disposed || shellState !== state) return;
-      const opener = previous === "apps" ? "apps" : previous === "focus" ? "focus" : "more";
-      const selector = state === "compact" ? '[data-focus="compact"]' :
-        state === "expanded" ? (previous === "compact" ? '[data-focus="collapse"]' : `[data-focus="${opener}"]`) :
-        state === "settings" ? '[data-focus="settings"]' : '[data-panel-focus]';
-      shell.querySelector<HTMLElement>(selector)?.focus({ preventScroll: true });
+      const parentNav = previous === "apps" ? "apps" : previous === "focus" ? "focus" : previous === "capture" ? "capture" : "more";
+      const restored = state === "expanded" && previous !== "compact"
+        ? shell.querySelector<HTMLElement>(`[data-focus="${parentNav}"]`) ?? savedFocus.get(state)
+        : savedFocus.get(state);
+      if (restored?.isConnected && restored.getClientRects().length && !restored.hasAttribute("disabled")) {
+        restored.focus({ preventScroll: true });
+      } else {
+        const selector = state === "compact" ? '[data-focus="compact"]' :
+          state === "expanded" ? '[data-focus="collapse"]' :
+          state === "settings" ? '[data-focus="settings"]' :
+          state === "appPicker" ? '[data-autofocus]' : '[data-panel-focus]';
+        shell.querySelector<HTMLElement>(selector)?.focus({ preventScroll: true });
+      }
       startAutoCollapse();
     });
   }
@@ -85,13 +102,16 @@
   });
 
   async function navigate(state: NotchShellState) {
+    if (captureStore.busy) return;
+    const active = document.activeElement;
+    if (active instanceof HTMLElement && shell?.contains(active)) savedFocus.set(shellState, active);
     clearAutoCollapse();
     resizeError = "";
     try { await transition.request(state); }
     catch { resizeError = "Couldn’t resize the notch. Try again."; }
   }
 
-  function back() { void navigate(backState(shellState)); }
+  function back() { if (captureStore.busy) void captureStore.cancel(); else void navigate(backState(shellState, pickerOrigin)); }
 
   function handleKeyDown(event: KeyboardEvent) {
     keyboardActive = true;
@@ -110,6 +130,12 @@
     void clipboardStore.init();
     void batteryStore.init();
     void downloadsStore.init();
+    unsubscribePicker = shellActions.onAppPicker((replaceId) => {
+      if (captureStore.busy) return;
+      pickerOrigin = shellState === "settings" ? "settings" : "apps";
+      pickerReplaceId = replaceId;
+      void navigate("appPicker");
+    });
     unsubscribeCollapse = shellActions.onCollapse(() => { void navigate("compact"); });
     const motionPreference = window.matchMedia("(prefers-reduced-motion: reduce)");
     const updateMotion = () => settingsStore.applyLiveTokens(settingsStore.state);
@@ -125,6 +151,8 @@
     transition.destroy();
     clearAutoCollapse();
     unsubscribeCollapse?.();
+    unsubscribePicker?.();
+    void captureStore.cancel();
     unlistenSettings?.();
     closeSurface(shellState);
     mediaStore.destroy(); codingStore.destroy(); clipboardStore.destroy();
@@ -143,10 +171,14 @@
     onfocusin={clearAutoCollapse} onfocusout={() => { setTimeout(startAutoCollapse, 0); }}>
     {#if shellState === "compact"}
       <CompactNotch onopen={() => { void navigate("expanded"); }} />
-    {:else if shellState === "settings"}
-      <SettingsView onclose={back} />
-    {:else}
-      <ExpandedNotch {shellState} onStateChange={(state) => { void navigate(state); }} onback={back} oncollapse={() => { void navigate("compact"); }} />
+    {/if}
+    {#if hasSettings}
+      <div class="shell-surface" hidden={shellState !== "settings"}><SettingsView onclose={back} oncollapse={() => { void navigate("compact"); }} /></div>
+    {/if}
+    {#if hasOpened}
+      <div class="shell-surface" hidden={shellState === "settings" || shellState === "compact"}>
+        <ExpandedNotch {shellState} {pickerReplaceId} onStateChange={(state) => { void navigate(state); }} onback={back} oncollapse={() => { void navigate("compact"); }} />
+      </div>
     {/if}
     {#if resizeError}<div class="resize-error" role="alert">{resizeError}</div>{/if}
   </div>
@@ -155,5 +187,7 @@
 <style>
   .notch-wrapper { display: flex; justify-content: center; align-items: flex-start; width: 100%; height: 100%; padding: 0 16px 16px; pointer-events: none; }
   .notch-shell { position: relative; pointer-events: auto; width: var(--shell-width); height: var(--shell-height); max-width: 100%; max-height: 100%; flex: none; overflow: hidden; outline: none; background: var(--surface-root); border: 1px solid var(--border-subtle); border-top: none; border-radius: 0 0 var(--radius-shell) var(--radius-shell); box-shadow: var(--shadow-soft); transition: width var(--motion-shell) var(--ease-natural), height var(--motion-shell) var(--ease-natural); }
+  .shell-surface { height: 100%; min-height: 0; }
+  [hidden] { display: none !important; }
   .resize-error { position: absolute; inset: auto 8px 4px; background: var(--surface-raised); color: var(--status-error); font-size: 12px; padding: 4px 8px; border-radius: 6px; }
 </style>

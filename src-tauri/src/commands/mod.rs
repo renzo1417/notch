@@ -1,4 +1,5 @@
 pub mod battery;
+pub mod capture;
 pub mod clipboard;
 pub mod coding;
 pub mod downloads;
