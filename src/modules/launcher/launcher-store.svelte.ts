@@ -3,7 +3,7 @@ import { contextEngine, ContextPriority } from "../../app/state/context-engine.t
 import { notificationStore } from "../notifications/notification-store.svelte.ts";
 import { mascotStore } from "../../mascot/mascot-store.svelte.ts";
 import { shellActions } from "../../app/state/shell-state.ts";
-import { MAX_PINNED_BEFORE_OVERFLOW, type LaunchableApp, type InspectedApp } from "./types.ts";
+import { MAX_PINNED_BEFORE_OVERFLOW, launchIdentity, type LaunchableApp, type InspectedApp, type InstalledApp, type InstalledAppCatalog } from "./types.ts";
 
 export { MAX_PINNED_BEFORE_OVERFLOW };
 
@@ -13,6 +13,69 @@ class LauncherStore {
   launchingAppId = $state<string | null>(null);
   brokenApp = $state<LaunchableApp | null>(null);
   editingApp = $state<LaunchableApp | null>(null);
+  catalog = $state<InstalledApp[]>([]);
+  catalogWarnings = $state<string[]>([]);
+  catalogLoading = $state(false);
+  catalogError = $state("");
+  catalogQuery = $state("");
+  catalogBusyId = $state<string | null>(null);
+  catalogNotice = $state("");
+  browseBusy = $state(false);
+  private catalogLoaded = false;
+  private initialized = false;
+  private initialization: Promise<void> | null = null;
+  private catalogRequest: Promise<void> | null = null;
+  private iconRequests = new Map<string, Promise<string | null>>();
+
+  async loadCatalog(refresh = false): Promise<void> {
+    if (this.catalogRequest) return this.catalogRequest;
+    if (this.catalogLoaded && !refresh) return;
+    this.catalogLoading = true;
+    this.catalogError = "";
+    const request = (async () => {
+      try {
+        const result = await invoke<InstalledAppCatalog>("list_installed_apps", { refresh });
+        this.catalog = result.apps;
+        this.catalogWarnings = result.warnings;
+        this.catalogLoaded = true;
+        if (refresh) this.iconRequests.clear();
+      } catch {
+        this.catalogError = "Couldn’t list installed apps. Try Refresh or browse for an executable or shortcut.";
+      } finally { this.catalogLoading = false; this.catalogRequest = null; }
+    })();
+    this.catalogRequest = request;
+    return request;
+  }
+
+  isInstalledAppAdded(app: InstalledApp): boolean {
+    return this.apps.some((pin) => launchIdentity(pin) === launchIdentity(app));
+  }
+
+  installedAppIcon(id: string): Promise<string | null> {
+    let request = this.iconRequests.get(id);
+    if (!request) {
+      request = invoke<string | null>("get_installed_app_icon", { catalogId: id }).catch(() => null);
+      this.iconRequests.set(id, request);
+    }
+    return request;
+  }
+
+  async pinInstalledApp(app: InstalledApp, replaceId?: string): Promise<boolean> {
+    if (this.catalogBusyId || this.browseBusy) return false;
+    this.catalogBusyId = app.id;
+    this.catalogError = "";
+    try {
+      const pin = await invoke<LaunchableApp>("pin_installed_app", { catalogId: app.id, replaceId: replaceId ?? null });
+      this.apps = this.apps.some((entry) => entry.id === pin.id)
+        ? this.apps.map((entry) => entry.id === pin.id ? pin : entry) : [...this.apps, pin];
+      this.brokenApp = null;
+      this.catalogNotice = `${app.name} ${replaceId ? "replaced" : "added"}.`;
+      return true;
+    } catch (error) {
+      this.catalogError = `Couldn’t ${replaceId ? "replace" : "add"} this app. ${String(error)}`;
+      return false;
+    } finally { this.catalogBusyId = null; }
+  }
 
   get pinnedApps(): LaunchableApp[] {
     return this.apps
@@ -30,15 +93,20 @@ class LauncherStore {
   }
 
   async init(): Promise<void> {
+    if (this.initialization) return this.initialization;
+    if (this.initialized) return;
     this.isLoading = true;
-    try {
-      const result = await invoke<LaunchableApp[]>("get_launcher_apps");
-      this.apps = result;
-    } catch (err) {
-      console.error("Failed to load launcher apps:", err);
-    } finally {
-      this.isLoading = false;
-    }
+    const request = (async () => {
+      try {
+        const result = await invoke<LaunchableApp[]>("get_launcher_apps");
+        this.apps = result;
+        this.initialized = true;
+      } catch (err) {
+        console.error("Failed to load launcher apps:", err);
+      } finally { this.isLoading = false; this.initialization = null; }
+    })();
+    this.initialization = request;
+    return request;
   }
 
   openLauncherSurface(): void {
@@ -56,11 +124,21 @@ class LauncherStore {
     this.editingApp = null;
   }
 
-  async pickAndAdd(): Promise<boolean> {
+  async pickAndAdd(replaceId?: string): Promise<boolean> {
+    if (this.browseBusy || this.catalogBusyId) return false;
+    this.browseBusy = true;
     try {
       const selectedPath = await invoke<string | null>("pick_app_file");
       if (!selectedPath) {
         return false;
+      }
+
+      if (replaceId) {
+        const updated = await invoke<LaunchableApp>("locate_app", { id: replaceId, newPath: selectedPath });
+        this.apps = this.apps.map((app) => app.id === replaceId ? updated : app);
+        this.brokenApp = null;
+        this.catalogNotice = `${updated.name} replaced.`;
+        return true;
       }
 
       const inspected = await invoke<InspectedApp>("inspect_app_file", {
@@ -76,13 +154,16 @@ class LauncherStore {
         enabled: true,
         order: this.apps.length,
         exists: true,
+        target: inspected.target,
       };
 
       const added = await invoke<LaunchableApp>("add_launcher_app", {
         app: newApp,
       });
 
-      this.apps = [...this.apps, added];
+      this.apps = this.apps.some((app) => app.id === added.id)
+        ? this.apps.map((app) => app.id === added.id ? added : app) : [...this.apps, added];
+      this.catalogNotice = `${added.name} added.`;
       mascotStore.setMood("happy", 1800);
       notificationStore.notify({
         title: "App Added",
@@ -91,6 +172,7 @@ class LauncherStore {
       });
       return true;
     } catch (err) {
+      this.catalogError = `Couldn’t add this app. ${String(err)}`;
       console.error("Failed to pick and add app:", err);
       notificationStore.notify({
         title: "Add App Failed",
@@ -98,7 +180,7 @@ class LauncherStore {
         durationMs: 3000,
       });
       return false;
-    }
+    } finally { this.browseBusy = false; }
   }
 
   async launch(app: LaunchableApp): Promise<boolean> {

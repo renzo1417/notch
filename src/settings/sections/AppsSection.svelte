@@ -1,12 +1,16 @@
 <script lang="ts">
+  import { onMount } from "svelte";
   import { settingsStore } from "../settings-store.svelte";
   import { launcherStore } from "../../modules/launcher/launcher-store.svelte";
   import IconPlus from "../../icons/IconPlus.svelte";
   import IconTrash from "../../icons/IconTrash.svelte";
   import IconApp from "../../icons/IconApp.svelte";
+  import { shellActions } from "../../app/state/shell-state";
 
   const apps = $derived(settingsStore.state.apps);
   const launcherApps = $derived(launcherStore.apps);
+
+  onMount(() => { void launcherStore.init(); });
 
   function toggleQuickDock() {
     settingsStore.update("apps", { quickDockEnabled: !apps.quickDockEnabled });
@@ -17,8 +21,8 @@
     settingsStore.update("apps", { maxQuickPinned: Number(target.value) });
   }
 
-  async function handleAddApp() {
-    await launcherStore.pickAndAdd();
+  function handleAddApp() {
+    shellActions.requestAppPicker();
   }
 
   async function handleToggleApp(id: string, enabled: boolean) {
@@ -77,13 +81,14 @@
     <div class="apps-header">
       <div class="setting-info">
         <span class="setting-label">Configured Applications ({launcherApps.length})</span>
-        <span class="setting-desc">Native Windows executables or shortcuts</span>
+        <span class="setting-desc">Installed Windows apps, executables, and shortcuts</span>
       </div>
       <button
         type="button"
         class="add-app-btn"
         onclick={handleAddApp}
-        title="Add application executable"
+        title="Choose an installed app"
+        data-focus="add-app"
       >
         <IconPlus size={16} color="currentColor" />
         <span>Add App</span>
@@ -93,7 +98,7 @@
     <div class="apps-list">
       {#if launcherApps.length === 0}
         <div class="empty-apps">
-          <span>No apps configured. Tap "Add App" to select an executable or shortcut.</span>
+          <span>No apps configured. Choose "Add App" to search installed applications.</span>
         </div>
       {:else}
         {#each launcherApps as app (app.id)}
