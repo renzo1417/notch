@@ -2,6 +2,9 @@
   import { onMount, onDestroy, tick } from "svelte";
   import { invoke } from "@tauri-apps/api/core";
   import { listen, type UnlistenFn } from "@tauri-apps/api/event";
+  import { converterStore } from "../modules/converter/converter-store.svelte";
+  import { insideDropTarget, supportedDrop } from "../modules/converter/types";
+  import IconConvert from "../icons/IconConvert.svelte";
   import CompactNotch from "./CompactNotch.svelte";
   import ExpandedNotch from "./ExpandedNotch.svelte";
   import { captureStore } from "../modules/capture/capture-store.svelte";
@@ -31,6 +34,11 @@
   let unsubscribePicker: (() => void) | undefined;
   let unsubscribeCollapse: (() => void) | undefined;
   let unlistenSettings: UnlistenFn | undefined;
+  let dropListeners: UnlistenFn[] = [];
+  let dragPaths: string[] = [];
+  let dropHover = $state(false);
+  let dropRejected = $state(false);
+  let dropHint = $state("Drop to convert");
   let initialResize: Promise<void> = Promise.resolve();
   let disposed = false;
   const geometry = $derived(SHELL_STATE_DIMENSIONS[shellState]);
@@ -122,6 +130,28 @@
     }
   }
 
+  type DropPosition = { x: number; y: number };
+  type FileDrag = { type: "leave" } | { type: "enter" | "drop"; paths: string[]; position: DropPosition } | { type: "over"; position: DropPosition };
+
+  function handleFileDrag(payload: FileDrag) {
+    if (disposed || !settingsStore.state.converter.enabled) { dropHover = false; return; }
+    if (payload.type === "leave") { dropHover = false; dragPaths = []; startAutoCollapse(); return; }
+    if (payload.type === "enter" || payload.type === "drop") dragPaths = payload.paths;
+    const inside = shell && insideDropTarget(payload.position, window.devicePixelRatio || 1, shell.getBoundingClientRect());
+    dropHover = Boolean(inside);
+    if (!inside) return;
+    clearAutoCollapse();
+    dropRejected = captureStore.busy || !supportedDrop(dragPaths);
+    dropHint = captureStore.busy ? "Finish your screenshot first" : !supportedDrop(dragPaths) ? "Drop up to 20 supported files" : converterStore.busy ? "View conversion in progress" : "Drop to convert";
+    if (payload.type !== "drop") return;
+    dropHover = false;
+    if (captureStore.busy) return;
+    const paths = [...dragPaths]; dragPaths = [];
+    if (!supportedDrop(paths)) converterStore.error = "Choose up to 20 image, PDF, Office, or text files. Folders and links are not supported.";
+    else void converterStore.prepare(paths);
+    void navigate("converter");
+  }
+
   onMount(() => {
     initialResize = resize("compact").catch(() => { resizeError = "Couldn’t position the notch. Try opening it again."; });
     void settingsStore.init();
@@ -143,6 +173,19 @@
     if (native) void listen("open-settings", () => { void navigate("settings"); }).then((unlisten) => {
       if (disposed) unlisten(); else unlistenSettings = unlisten;
     });
+    if (native) void Promise.allSettled((["enter", "over", "drop", "leave"] as const).map(type =>
+      listen<{ paths?: string[]; position?: DropPosition }>(`tauri://drag-${type}`, ({ payload }) => {
+        if (type === "leave") handleFileDrag({ type });
+        else if (payload.position && type === "over") handleFileDrag({ type, position: payload.position });
+        else if (payload.position && (type === "enter" || type === "drop")) handleFileDrag({ type, position: payload.position, paths: payload.paths ?? [] });
+      }, { target: { kind: "Webview", label: "main" } })
+    )).then(results => {
+      const listeners = results.flatMap(result => result.status === "fulfilled" ? [result.value] : []);
+      if (disposed || listeners.length !== 4) {
+        listeners.forEach(unlisten => unlisten());
+        if (!disposed) resizeError = "File drop is unavailable. Use More → Convert files → Choose files.";
+      } else dropListeners = listeners;
+    });
     return () => motionPreference.removeEventListener("change", updateMotion);
   });
 
@@ -154,6 +197,9 @@
     unsubscribePicker?.();
     void captureStore.cancel();
     unlistenSettings?.();
+    dropListeners.forEach(unlisten => unlisten());
+    dropListeners = [];
+    converterStore.destroy();
     closeSurface(shellState);
     mediaStore.destroy(); codingStore.destroy(); clipboardStore.destroy();
     batteryStore.destroy(); downloadsStore.destroy(); timerStore.destroy(); settingsStore.destroy();
@@ -181,6 +227,7 @@
       </div>
     {/if}
     {#if resizeError}<div class="resize-error" role="alert">{resizeError}</div>{/if}
+    <div class="file-drop-feedback" class:visible={dropHover} class:rejected={dropRejected} aria-hidden={!dropHover}><IconConvert size={18} /><span>{dropHint}</span></div>
   </div>
 </div>
 
@@ -190,4 +237,9 @@
   .shell-surface { height: 100%; min-height: 0; }
   [hidden] { display: none !important; }
   .resize-error { position: absolute; inset: auto 8px 4px; background: var(--surface-raised); color: var(--status-error); font-size: 12px; padding: 4px 8px; border-radius: 6px; }
+  .file-drop-feedback { position: absolute; inset: 0; z-index: 5; pointer-events: none; display: flex; align-items: center; justify-content: center; gap: 10px; border-radius: inherit; color: var(--tool-teal); background: var(--surface-root); border: 1px solid var(--tool-teal); opacity: 0; transition: opacity var(--motion-micro) var(--ease-natural); }
+  .file-drop-feedback.visible { opacity: 1; }
+  .file-drop-feedback span { font-size: 13px; font-weight: 600; transform: translateY(4px); transition: transform var(--motion-context) var(--ease-natural); }
+  .file-drop-feedback.visible span { transform: translateY(0); }
+  .file-drop-feedback.rejected { color: var(--status-warning); border-color: var(--status-warning); }
 </style>

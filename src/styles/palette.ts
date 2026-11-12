@@ -8,6 +8,8 @@ export const GRAPHITE = {
   warning: "#e3c56f",
   attention: "#dfa16c",
   error: "#e38f8f",
+  teal: "#7ccfc0",
+  violet: "#b9a5ee",
   chassis: "#373b41",
   ear: "#454a52",
   visor: "#121416",

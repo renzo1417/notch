@@ -10,13 +10,14 @@
   import DownloadsSection from "./sections/DownloadsSection.svelte";
   import AppsSection from "./sections/AppsSection.svelte";
   import PerformanceSection from "./sections/PerformanceSection.svelte";
+  import ConverterSection from "./sections/ConverterSection.svelte";
   import IconChevronLeft from "../icons/IconChevronLeft.svelte";
   import IconRotateCcw from "../icons/IconRotateCcw.svelte";
 
   let { onclose, oncollapse }: { onclose: () => void; oncollapse: () => void } = $props();
   const groups = [
     { id: "appearance", label: "Appearance", sections: [{ label: "Appearance", component: AppearanceSection }, { label: "Pip", component: MascotSection }] },
-    { id: "tools", label: "Tools", sections: [{ label: "Music", component: MusicSection }, { label: "Focus", component: TimerSection }, { label: "Clipboard", component: ClipboardSection }, { label: "Downloads", component: DownloadsSection }, { label: "Apps", component: AppsSection }] },
+    { id: "tools", label: "Tools", sections: [{ label: "Convert files", component: ConverterSection }, { label: "Music", component: MusicSection }, { label: "Focus", component: TimerSection }, { label: "Clipboard", component: ClipboardSection }, { label: "Downloads", component: DownloadsSection }, { label: "Apps", component: AppsSection }] },
     { id: "system", label: "System", sections: [{ label: "General", component: GeneralSection }, { label: "Performance", component: PerformanceSection }] },
   ];
   let selected = $state(0);

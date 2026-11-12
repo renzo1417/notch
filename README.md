@@ -4,6 +4,8 @@ A lightweight top-center Windows desktop companion layer that stays quiet by def
 
 Built with Tauri 2, Rust, and Svelte 5.
 
+Drop images, PDFs, Office documents, or text onto the Notch to convert them with an installed Filee CLI. Conversion runs on demand, one file at a time, with a 512 MiB converter memory limit. Open **More → Convert files** to choose files or set up Filee. See [file conversion setup and resource policy](docs/FILE_CONVERSION.md).
+
 ---
 
 ## 1. Overview

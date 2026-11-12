@@ -40,6 +40,8 @@
 .focus-panel .preset-btn, .focus-panel .custom-set-btn { padding: 4px 12px; color: var(--text-secondary); font-size: 12px; }
 .focus-panel .preset-btn.active { background: var(--surface-raised); color: var(--text-primary); }
 .focus-panel .time-digits { font-size: 36px; font-weight: 600; letter-spacing: -.025em; font-variant-numeric: tabular-nums; line-height: 1.2; }
+.focus-panel .time-digits { color: var(--tool-violet); }
+.focus-panel .preset-btn.active { background: var(--tool-violet-muted); color: var(--tool-violet); }
 .focus-panel .main-action-btn { display: inline-flex; align-items: center; gap: 8px; padding: 6px 20px; background: var(--accent-primary); color: var(--on-accent); font-size: 13px; font-weight: 600; }
 .focus-panel .main-action-btn:hover:not(:disabled) { background: var(--accent-primary); opacity: .9; }
 .focus-panel .reset-btn { background: var(--surface-raised); }
@@ -55,4 +57,5 @@
 .downloads-panel .progress-meta, .downloads-panel .completed-meta { font-size: 12px; color: var(--text-secondary); }
 .downloads-panel .progress-bar-wrap { height: 3px; background: var(--surface-active); border-radius: 2px; overflow: hidden; }
 .downloads-panel .progress-bar-fill { height: 100%; background: var(--accent-primary); }
+.downloads-panel .progress-bar-fill { background: var(--tool-amber); }
 @media (max-width: 380px) { .tool-panel .apps-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); } }

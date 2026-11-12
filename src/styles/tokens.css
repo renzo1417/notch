@@ -24,7 +24,13 @@
   --status-warning: #e3c56f;
   --status-attention: #dfa16c;
   --status-error: #e38f8f;
-  --status-success: var(--text-primary);
+  --status-success: #7ccfc0;
+  --tool-teal: #7ccfc0;
+  --tool-teal-muted: #7ccfc01f;
+  --tool-violet: #b9a5ee;
+  --tool-violet-muted: #b9a5ee1f;
+  --tool-amber: #e3c56f;
+  --tool-amber-muted: #e3c56f1f;
   --status-info: var(--text-secondary);
 
   /* Radius System */

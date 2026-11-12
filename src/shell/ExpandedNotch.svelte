@@ -9,6 +9,7 @@
   import CapturePanel from "../modules/capture/CapturePanel.svelte";
   import { captureStore } from "../modules/capture/capture-store.svelte";
   import IconCamera from "../icons/IconCamera.svelte";
+  import IconConvert from "../icons/IconConvert.svelte";
   import FocusTimerPanel from "../modules/timer/FocusTimerPanel.svelte";
   import ClipboardPanel from "../modules/clipboard/ClipboardPanel.svelte";
   import DownloadsPanel from "../modules/downloads/DownloadsPanel.svelte";
@@ -36,9 +37,9 @@
   let candidate = $state<ContextCandidate>(contextEngine.current);
   onMount(() => contextEngine.subscribe((value) => { candidate = value; }));
   const isHome = $derived(shellState === "expanded");
-  const pages: NotchShellState[] = ["apps", "appPicker", "focus", "capture", "clipboard", "downloads", "battery", "utilities"];
+  const pages: NotchShellState[] = ["apps", "appPicker", "focus", "capture", "converter", "clipboard", "downloads", "battery", "utilities"];
   const visited = new SvelteSet<NotchShellState>();
-  const titles: Record<string, string> = { apps: "Apps", appPicker: "Installed apps", focus: "Focus", capture: "Screenshot", clipboard: "Clipboard", downloads: "Downloads", battery: "Battery", utilities: "More tools" };
+  const titles: Record<string, string> = { apps: "Apps", appPicker: "Installed apps", focus: "Focus", capture: "Screenshot", converter: "Convert files", clipboard: "Clipboard", downloads: "Downloads", battery: "Battery", utilities: "More tools" };
   $effect(() => { if (pages.includes(shellState)) visited.add(shellState); });
   function toggle(state: NotchShellState) { onStateChange(shellState === state ? "expanded" : state); }
 </script>
@@ -61,16 +62,19 @@
           {:else if page === "appPicker"}<InstalledAppsPanel replaceId={pickerReplaceId} />
           {:else if page === "focus"}<FocusTimerPanel />
           {:else if page === "capture"}<CapturePanel />
+          {:else if page === "converter" && shellState === "converter"}
+            {#await import("../modules/converter/ConverterPanel.svelte")}<p role="status">Opening converter…</p>{:then module}<module.default />{:catch}<p role="alert">Could not open the converter. Go back and try again.</p>{/await}
           {:else if page === "clipboard"}<ClipboardPanel />
           {:else if page === "downloads"}<DownloadsPanel />
           {:else if page === "battery"}<BatteryContextView />
           {:else if page === "utilities"}
             <h2>More tools</h2>
             <div class="utility-list">
-              <button type="button" data-focus="clipboard" onclick={() => onStateChange("clipboard")}><IconClipboard size={16} /><span>Clipboard</span><IconChevronRight size={16} /></button>
-              <button type="button" data-focus="downloads" onclick={() => onStateChange("downloads")}><IconDownload size={16} /><span>Downloads</span><IconChevronRight size={16} /></button>
-              {#if batteryStore.hasBattery}<button type="button" data-focus="battery" onclick={() => onStateChange("battery")}><IconBattery size={16} /><span>Battery</span><span class="utility-value">{batteryStore.formattedPercent}</span><IconChevronRight size={16} /></button>{/if}
-              <button type="button" data-focus="open-settings" onclick={() => onStateChange("settings")}><IconSettings size={16} /><span>Settings</span><IconChevronRight size={16} /></button>
+              {#if settingsStore.state.converter.enabled}<button type="button" class="convert-tool" data-focus="converter" onclick={() => onStateChange("converter")}><span class="tool-icon"><IconConvert size={16} /></span><span>Convert files</span><IconChevronRight size={16} /></button>{/if}
+              <button type="button" data-focus="clipboard" onclick={() => onStateChange("clipboard")}><span class="tool-icon"><IconClipboard size={16} /></span><span>Clipboard</span><IconChevronRight size={16} /></button>
+              <button type="button" class="downloads-tool" data-focus="downloads" onclick={() => onStateChange("downloads")}><span class="tool-icon"><IconDownload size={16} /></span><span>Downloads</span><IconChevronRight size={16} /></button>
+              {#if batteryStore.hasBattery}<button type="button" data-focus="battery" onclick={() => onStateChange("battery")}><span class="tool-icon"><IconBattery size={16} /></span><span>Battery</span><span class="utility-value">{batteryStore.formattedPercent}</span><IconChevronRight size={16} /></button>{/if}
+              <button type="button" data-focus="open-settings" onclick={() => onStateChange("settings")}><span class="tool-icon"><IconSettings size={16} /></span><span>Settings</span><IconChevronRight size={16} /></button>
             </div>
           {/if}
         {/if}
@@ -103,9 +107,17 @@
   .utility-list button { display: flex; align-items: center; gap: 12px; min-height: 40px; padding: 4px 8px; border-radius: 8px; color: var(--text-secondary); text-align: left; }
   .utility-list button:hover { background: var(--surface-hover); color: var(--text-primary); }
   .utility-list button > span:first-of-type { flex: 1; color: var(--text-primary); }
+  .utility-list button > span.tool-icon:first-of-type { display: grid; place-items: center; width: 28px; height: 28px; flex: 0 0 28px; border-radius: 8px; }
+  .utility-list .convert-tool > .tool-icon { color: var(--tool-teal); background: var(--tool-teal-muted); }
+  .utility-list .downloads-tool > .tool-icon { color: var(--tool-amber); background: var(--tool-amber-muted); }
+  .utility-list .tool-icon + span { flex: 1; }
   .utility-value { font-size: 12px; font-variant-numeric: tabular-nums; }
   .primary-nav { display: flex; align-items: center; justify-content: center; gap: 4px; border-top: 1px solid var(--border-subtle); padding: 4px 16px 8px; flex: none; }
   .primary-nav button { display: flex; align-items: center; justify-content: center; gap: 8px; min-height: 32px; padding: 4px 12px; font-size: 12px; font-weight: 500; color: var(--text-secondary); border-radius: 8px; }
   .primary-nav button:hover, .primary-nav button.active { color: var(--accent-primary); background: var(--accent-muted); }
+  .primary-nav button[data-focus="focus"] { color: var(--tool-violet); }
+  .primary-nav button[data-focus="focus"].active, .primary-nav button[data-focus="focus"]:hover { background: var(--tool-violet-muted); }
+  .primary-nav button[data-focus="capture"] { color: var(--tool-teal); }
+  .primary-nav button[data-focus="capture"].active, .primary-nav button[data-focus="capture"]:hover { background: var(--tool-teal-muted); }
   @media (max-width: 380px) { .companion-header { padding-inline: 8px; gap: 4px; } .primary-nav { gap: 4px; padding-inline: 4px; } .primary-nav button { gap: 4px; padding-inline: 6px; } }
 </style>

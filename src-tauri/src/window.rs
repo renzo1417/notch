@@ -36,7 +36,7 @@ pub fn get_dimensions_for_state(state: &str) -> (f64, f64) {
         "focus" | "timer" => (EXPANDED_WINDOW_WIDTH, FOCUS_WINDOW_HEIGHT),
         "clipboard" => (EXPANDED_WINDOW_WIDTH, CLIPBOARD_WINDOW_HEIGHT),
         "downloads" | "download" => (EXPANDED_WINDOW_WIDTH, DOWNLOADS_WINDOW_HEIGHT),
-        "utilities" | "battery" | "panel" => (EXPANDED_WINDOW_WIDTH, APPS_WINDOW_HEIGHT),
+        "utilities" | "battery" | "panel" | "converter" => (EXPANDED_WINDOW_WIDTH, APPS_WINDOW_HEIGHT),
         "settings" => (SETTINGS_WINDOW_WIDTH, SETTINGS_WINDOW_HEIGHT),
         _ => (COMPACT_WINDOW_WIDTH, COMPACT_WINDOW_HEIGHT),
     }

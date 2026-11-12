@@ -14,9 +14,9 @@ import {
 } from "../src/settings/migrations.ts";
 import { surfaceOpacity } from "../src/styles/palette.ts";
 
-test("Settings: default configuration contains all 9 sections with schemaVersion 3", () => {
+test("Settings: default configuration contains converter defaults with schemaVersion 4", () => {
   assert.equal(DEFAULT_SETTINGS_CONFIG.schemaVersion, SETTINGS_SCHEMA_VERSION);
-  assert.equal(DEFAULT_SETTINGS_CONFIG.schemaVersion, 3);
+  assert.equal(DEFAULT_SETTINGS_CONFIG.schemaVersion, 4);
 
   // 1. General
   assert.equal(typeof DEFAULT_SETTINGS_CONFIG.general.launchAtStartup, "boolean");
@@ -103,7 +103,7 @@ test("Settings Validation: clamps invalid numbers and rejects malformed hex colo
   };
 
   const recovered = migrateSettings(corrupted);
-  assert.equal(recovered.schemaVersion, 3);
+  assert.equal(recovered.schemaVersion, 4);
   // Color should fall back to default
   assert.equal(recovered.appearance.accentColor, "#83acee");
   // Opacity should clamp to 1.0
@@ -156,7 +156,7 @@ test("Settings Migration: preserves legacy v0 partial config and fills missing s
   };
 
   const migrated = migrateSettings(legacyV0Config);
-  assert.equal(migrated.schemaVersion, 3);
+  assert.equal(migrated.schemaVersion, 4);
   assert.equal(migrated.general.launchAtStartup, true);
   assert.equal(migrated.general.alwaysOnTop, false);
   assert.equal(migrated.general.autoCollapseDelayMs, 6000);
@@ -189,7 +189,7 @@ test("Matte migration: legacy silver changes once, retaining opacity and unrelat
     clipboard: { persistHistory: true },
   };
   const settings = migrateSettings(raw);
-  assert.equal(settings.schemaVersion, 3);
+  assert.equal(settings.schemaVersion, 4);
   assert.equal(settings.appearance.accentColor, "#83acee");
   assert.equal(settings.appearance.surfaceStyle, "matte");
   assert.equal(settings.appearance.opacity, .82);

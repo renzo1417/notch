@@ -55,6 +55,7 @@ export function migrateSettings(raw: unknown): SettingsConfig {
     result.appearance.opacity = clamp(app.opacity, 0.7, 1.0, 0.96);
     result.appearance.animationIntensity = clamp(app.animationIntensity, 0.0, 1.0, 1.0);
     result.appearance.reducedMotion = Boolean(app.reducedMotion);
+    result.appearance.toolColorsEnabled = app.toolColorsEnabled !== false;
   }
 
   // 3. Mascot section recovery
@@ -127,6 +128,12 @@ export function migrateSettings(raw: unknown): SettingsConfig {
   }
 
   // Advance schema version to current
+  if (data.converter && typeof data.converter === "object") {
+    const converter = data.converter as Record<string, unknown>;
+    result.converter.enabled = converter.enabled !== false;
+    result.converter.cliPath = typeof converter.cliPath === "string" && converter.cliPath.trim()
+      ? converter.cliPath.trim() : null;
+  }
   result.schemaVersion = SETTINGS_SCHEMA_VERSION;
   return result;
 }

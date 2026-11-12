@@ -97,6 +97,13 @@ class SettingsStore {
       "--status-error": GRAPHITE.error,
     };
     for (const [token, value] of Object.entries(palette)) root.style.setProperty(token, value);
+    const toolColors = { teal: GRAPHITE.teal, violet: GRAPHITE.violet, amber: GRAPHITE.warning };
+    for (const [name, value] of Object.entries(toolColors)) {
+      const color = appearance.toolColorsEnabled ? value : normalizeHex(appearance.accentColor);
+      root.style.setProperty(`--tool-${name}`, color);
+      root.style.setProperty(`--tool-${name}-muted`, `${color}1f`);
+    }
+    root.style.setProperty("--status-success", GRAPHITE.teal);
 
     // Accent color live update
     root.style.setProperty("--accent-primary", normalizeHex(appearance.accentColor));

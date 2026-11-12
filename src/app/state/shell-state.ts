@@ -10,6 +10,7 @@ export type NotchShellState =
   | "apps"
   | "appPicker"
   | "capture"
+  | "converter"
   | "focus"
   | "clipboard"
   | "downloads"
@@ -38,6 +39,7 @@ export const SHELL_STATE_DIMENSIONS: Record<NotchShellState, ShellDimensions> = 
   apps: dimensions(480, 328),
   appPicker: dimensions(480, 328),
   capture: dimensions(480, 328),
+  converter: dimensions(480, 328),
   focus: dimensions(480, 328),
   clipboard: dimensions(480, 328),
   downloads: dimensions(480, 328),
@@ -56,7 +58,7 @@ export function normalizeShellState(state: NotchShellState): NotchShellState {
 
 export function backState(state: NotchShellState, pickerOrigin: NotchShellState = "apps"): NotchShellState {
   if (state === "appPicker") return pickerOrigin;
-  if (["clipboard", "downloads", "battery", "settings"].includes(state)) return "utilities";
+  if (["clipboard", "downloads", "battery", "settings", "converter"].includes(state)) return "utilities";
   return state === "expanded" || state === "compact" ? "compact" : "expanded";
 }
 

@@ -1,5 +1,11 @@
 # PROJECT_NOTCH — Design System & Tokens
 
+## Converter and tool colors
+
+Shared tokens add teal `#7CCFC0` for conversion/capture and success, violet `#B9A5EE` for Focus, and existing amber `#E3C56F` for download/attention states. Tinted icon surfaces and active navigation make tools identifiable while preserving the user's primary accent. **Appearance → Tool colors** switches tool accents back to the selected primary color.
+
+File drag feedback uses a 120 ms opacity transition, with 180 ms transform/opacity feedback for accepted rows, and the existing 220 ms shell transition. Reduced-motion settings zero these durations. Conversion content is mounted only while its drawer is active; no animation library or image assets are added.
+
 **Status:** Matte Blue companion
 **Reference Document:** [PRODUCT_SPEC.md](../PRODUCT_SPEC.md)
 

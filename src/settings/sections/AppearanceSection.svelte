@@ -30,6 +30,10 @@
 
 <div class="section-container" role="group" aria-label="Appearance Settings">
   <div class="setting-row">
+    <div class="setting-info"><span class="setting-label">Tool colors</span><span class="setting-desc">Teal for conversion and capture, violet for Focus, amber for downloads.</span></div>
+    <button type="button" class="win-switch" class:checked={appearance.toolColorsEnabled} role="switch" aria-checked={appearance.toolColorsEnabled} aria-label="Enable tool colors" onclick={() => settingsStore.update("appearance", { toolColorsEnabled: !appearance.toolColorsEnabled })}><span class="switch-thumb"></span></button>
+  </div>
+  <div class="setting-row">
     <div class="setting-info">
       <label for="surface-style" class="setting-label">Surface style</label>
       <span class="setting-desc">Matte stays fully opaque. Translucent lets your wallpaper show through.</span>

@@ -5,7 +5,7 @@
 
 import { GRAPHITE } from "../styles/palette.ts";
 
-export const SETTINGS_SCHEMA_VERSION = 3;
+export const SETTINGS_SCHEMA_VERSION = 4;
 
 export interface GeneralSettings {
   /** Launch application on Windows startup */
@@ -19,6 +19,7 @@ export interface GeneralSettings {
 }
 
 export interface AppearanceSettings {
+  toolColorsEnabled: boolean;
   /** Opaque matte surface, or optional wallpaper translucency. */
   surfaceStyle: "matte" | "translucent";
   /** Primary accent color hex code */
@@ -108,6 +109,7 @@ export interface SettingsConfig {
   downloads: DownloadsSettings;
   apps: AppsSettings;
   performance: PerformanceSettings;
+  converter: { enabled: boolean; cliPath: string | null };
 }
 
 export type SettingsSection =
@@ -119,7 +121,8 @@ export type SettingsSection =
   | "clipboard"
   | "downloads"
   | "apps"
-  | "performance";
+  | "performance"
+  | "converter";
 
 export const ACCENT_COLOR_PRESETS: Array<{ label: string; value: string }> = [
   { label: "Matte blue", value: GRAPHITE.accent },
@@ -133,6 +136,7 @@ export const ACCENT_COLOR_PRESETS: Array<{ label: string; value: string }> = [
 
 export const DEFAULT_SETTINGS_CONFIG: SettingsConfig = {
   schemaVersion: SETTINGS_SCHEMA_VERSION,
+  converter: { enabled: true, cliPath: null },
   general: {
     launchAtStartup: false,
     selectedMonitor: null,
@@ -140,6 +144,7 @@ export const DEFAULT_SETTINGS_CONFIG: SettingsConfig = {
     autoCollapseDelayMs: 4000,
   },
   appearance: {
+    toolColorsEnabled: true,
     surfaceStyle: "matte",
     accentColor: GRAPHITE.accent,
     opacity: 0.96,

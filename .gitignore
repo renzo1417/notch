@@ -39,6 +39,7 @@ Cargo.lock.bk
 *.lib
 *.ilk
 *.obj
+*.res
 *.msi
 *.msix
 *.appinstaller
@@ -117,6 +118,8 @@ $RECYCLE.BIN/
 .zed/
 
 # Application Local Runtime Data & State
+.notch-convert-*/
+*.notch-convert-*
 settings.json
 launcher_apps.json
 clipboard_history.json
@@ -151,4 +154,7 @@ coverage/
 .coverage/
 .nyc_output/
 test-results/
+results.json
+*-results.json
+test-screenshots/
 *.lcov

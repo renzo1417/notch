@@ -7,7 +7,7 @@ use tauri::{AppHandle, Emitter, Manager};
 use crate::integrations::startup;
 use crate::window;
 
-pub const CURRENT_SCHEMA_VERSION: u32 = 3;
+pub const CURRENT_SCHEMA_VERSION: u32 = 4;
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 #[serde(rename_all = "camelCase")]
@@ -43,6 +43,8 @@ impl Default for SurfaceStyle {
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 #[serde(rename_all = "camelCase")]
 pub struct AppearanceConfig {
+    #[serde(default = "enabled_by_default")]
+    pub tool_colors_enabled: bool,
     #[serde(default)]
     pub surface_style: SurfaceStyle,
     pub accent_color: String,
@@ -55,6 +57,7 @@ impl Default for AppearanceConfig {
     fn default() -> Self {
         Self {
             surface_style: SurfaceStyle::Matte,
+            tool_colors_enabled: true,
             accent_color: "#83acee".to_string(),
             opacity: 0.96,
             animation_intensity: 1.0,
@@ -189,6 +192,23 @@ impl Default for PerformanceConfig {
     }
 }
 
+fn enabled_by_default() -> bool {
+    true
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[serde(rename_all = "camelCase", default)]
+pub struct ConverterConfig {
+    pub enabled: bool,
+    pub cli_path: Option<String>,
+}
+
+impl Default for ConverterConfig {
+    fn default() -> Self {
+        Self { enabled: true, cli_path: None }
+    }
+}
+
 /// Unified typed settings configuration.
 /// Defined in PRODUCT_SPEC.md section 22.
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
@@ -204,6 +224,8 @@ pub struct SettingsConfig {
     pub downloads: DownloadsConfig,
     pub apps: AppsConfig,
     pub performance: PerformanceConfig,
+    #[serde(default)]
+    pub converter: ConverterConfig,
 }
 
 impl Default for SettingsConfig {
@@ -219,6 +241,7 @@ impl Default for SettingsConfig {
             downloads: DownloadsConfig::default(),
             apps: AppsConfig::default(),
             performance: PerformanceConfig::default(),
+            converter: ConverterConfig::default(),
         }
     }
 }
@@ -273,6 +296,9 @@ pub fn migrate_settings_json(raw: serde_json::Value) -> SettingsConfig {
                 }
                 if let Some(b) = obj.get("reducedMotion").and_then(|v| v.as_bool()) {
                     config.appearance.reduced_motion = b;
+                }
+                if let Some(b) = obj.get("toolColorsEnabled").and_then(|v| v.as_bool()) {
+                    config.appearance.tool_colors_enabled = b;
                 }
             }
         }
@@ -347,6 +373,11 @@ pub fn migrate_settings_json(raw: serde_json::Value) -> SettingsConfig {
         }
 
         // Advance after applying one-time migrations.
+        if let Some(val) = map.get("converter") {
+            if let Ok(converter) = serde_json::from_value::<ConverterConfig>(val.clone()) {
+                config.converter = converter;
+            }
+        }
         config.schema_version = CURRENT_SCHEMA_VERSION;
     }
 
@@ -485,7 +516,7 @@ mod tests {
             "appearance": { "accentColor": "#3B82F6", "opacity": 0.82 },
             "general": { "selectedMonitor": "Display 2" }
         }));
-        assert_eq!(config.schema_version, 3);
+        assert_eq!(config.schema_version, CURRENT_SCHEMA_VERSION);
         assert_eq!(config.appearance.accent_color, "#83acee");
         assert_eq!(config.appearance.surface_style, SurfaceStyle::Matte);
         assert!((config.appearance.opacity - 0.82).abs() < 0.001);
