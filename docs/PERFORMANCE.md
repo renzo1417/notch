@@ -1,5 +1,21 @@
 # PROJECT_NOTCH — Performance & Resource Audit (Phase 10)
 
+**Measurement clarification (2026-11-10):** The historical 35–48 MB figures below must not be interpreted as the complete Notch process tree. WebView2 creates browser, renderer, GPU, and utility processes. Report their private bytes and private working sets alongside the Rust process. The converter's 512 MiB committed-memory cap is a separate active-job limit. See [the current resource policy](FILE_CONVERSION.md) and `scripts/measure-idle-memory.ps1` for reproducible sampling.
+
+## Converter release comparison — 2026-11-10
+
+Original HEAD and converter-enabled release samples used the same isolated `com.projectnotch.benchmark` profile, 45 seconds of warmup, and five samples of the complete owned process tree. Both had seven processes and zero Filee processes while idle.
+
+| Metric | Original release | Converter-enabled release |
+|---|---:|---:|
+| Mean private resident working set | 75.10 MiB | 71.34 MiB |
+| Mean private committed bytes | 154.89 MiB | 152.43 MiB |
+| Idle CPU, normalized across logical processors | 0.000% rounded | 0.000% rounded |
+
+This single paired run showed no added idle memory regression; the small decrease is within runtime variation and is not a guaranteed saving. These samples were taken during implementation, before final result-opening validation changes. They do not establish peak conversion usage or memory after processing arbitrary documents. The 512 MiB conversion limit is separately verified against a native CLI fixture that attempts to allocate beyond it.
+
+No real Filee engine installation was available for decoding tests. The CLI contract, Windows process limits, UI workflow, and failure cleanup were tested separately with local fixtures. Recheck actual Office/PDF/image routes on the installed Filee version before claiming their fidelity.
+
 **Document Version:** 1.0.0  
 **Phase:** 10 (Stabilization, Resource Audit, QA, and Packaging)  
 **Target Environment:** Windows 11 (Primary), Windows 10 (Best-Effort)  

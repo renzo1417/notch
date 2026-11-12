@@ -26,6 +26,7 @@
   let renderer: MascotRenderer | null = null;
   let stateMachine: MascotStateMachine | null = null;
   let animationFrameId: number | null = null;
+  let wakeTimer: ReturnType<typeof setTimeout> | null = null;
   let lastFrameTimeMs: number = 0;
   let isWindowVisible: boolean = true;
   let isHovered: boolean = $state(false);
@@ -52,17 +53,8 @@
         pauseInactiveAnimation: perfConfig.pauseInactiveAnimations,
       });
 
-      // Completely halt or resume rAF loop based on active enabled state
-      if (!mascotConfig.enabled) {
-        if (animationFrameId !== null) {
-          cancelAnimationFrame(animationFrameId);
-          animationFrameId = null;
-        }
-      } else if (isWindowVisible && animationFrameId === null) {
-        lastFrameTimeMs = 0;
-        initialRenderDone = false;
-        animationFrameId = requestAnimationFrame(renderFrame);
-      }
+      initialRenderDone = false;
+      if (!mascotConfig.enabled) stopFrames(); else wake();
     }
   });
 
@@ -71,7 +63,24 @@
     onStateChange?.(newState);
   }
 
+  function stopFrames() {
+    if (animationFrameId !== null) cancelAnimationFrame(animationFrameId);
+    if (wakeTimer !== null) clearTimeout(wakeTimer);
+    animationFrameId = null;
+    wakeTimer = null;
+  }
+
+  function wake() {
+    if (wakeTimer !== null) clearTimeout(wakeTimer);
+    wakeTimer = null;
+    if (animationFrameId === null && stateMachine && isWindowVisible && mascotConfig.enabled) {
+      lastFrameTimeMs = 0;
+      animationFrameId = requestAnimationFrame(renderFrame);
+    }
+  }
+
   function renderFrame(timeMs: number) {
+    animationFrameId = null;
     // If hidden, disabled, or unmounted, stop scheduling animation frames
     if (!canvasElement || !renderer || !stateMachine || !isWindowVisible || !mascotConfig.enabled) {
       if (isWindowVisible && mascotConfig.enabled && canvasElement) {
@@ -82,6 +91,11 @@
       return;
     }
 
+    const interval = 1000 / (perfConfig.batterySaverMode ? 30 : perfConfig.targetFps);
+    if (lastFrameTimeMs !== 0 && timeMs - lastFrameTimeMs < interval - 0.5) {
+      animationFrameId = requestAnimationFrame(renderFrame);
+      return;
+    }
     if (lastFrameTimeMs === 0) {
       lastFrameTimeMs = timeMs;
     }
@@ -112,7 +126,9 @@
       }
     }
 
-    animationFrameId = requestAnimationFrame(renderFrame);
+    const delay = stateMachine.nextWakeDelayMs();
+    if (delay === 0) animationFrameId = requestAnimationFrame(renderFrame);
+    else if (delay !== null) wakeTimer = setTimeout(wake, delay);
   }
 
   function handlePointerMove(event: MouseEvent) {
@@ -133,18 +149,21 @@
 
     isHovered = isHoveringMascot;
     stateMachine.recordPointerMove(relX, relY, isHoveringMascot);
+    wake();
   }
 
   function handlePointerLeave() {
     if (!interactive || !stateMachine) return;
     isHovered = false;
     stateMachine.handlePointerLeave();
+    wake();
   }
 
   function handleClick(event: MouseEvent) {
     if (!interactive || !stateMachine) return;
     event.stopPropagation();
     stateMachine.recordClick();
+    wake();
   }
 
   function handleKeyDown(event: KeyboardEvent) {
@@ -153,6 +172,7 @@
       event.preventDefault();
       event.stopPropagation();
       stateMachine.recordClick();
+      wake();
     }
   }
 
@@ -165,10 +185,7 @@
         animationFrameId = requestAnimationFrame(renderFrame);
       }
     } else {
-      if (animationFrameId !== null) {
-        cancelAnimationFrame(animationFrameId);
-        animationFrameId = null;
-      }
+      stopFrames();
     }
   }
 
@@ -180,6 +197,7 @@
     canvasElement.style.width = `${size}px`;
     canvasElement.style.height = `${size}px`;
     initialRenderDone = false;
+    wake();
   }
 
   onMount(() => {
@@ -197,6 +215,7 @@
 
     unsubMascot = mascotStore.subscribe((state, durationMs) => {
       stateMachine?.setState(state, durationMs);
+      wake();
     });
 
     setupCanvasDpr();
@@ -204,13 +223,12 @@
     window.addEventListener("resize", setupCanvasDpr, { passive: true });
     document.addEventListener("visibilitychange", handleVisibilityChange);
 
-    if (mascotConfig.enabled && isWindowVisible) {
-      animationFrameId = requestAnimationFrame(renderFrame);
-    }
+    wake();
     return () => preference.removeEventListener("change", updatePreference);
   });
 
   onDestroy(() => {
+    stopFrames();
     if (animationFrameId !== null) {
       cancelAnimationFrame(animationFrameId);
       animationFrameId = null;
@@ -227,6 +245,7 @@
   // Public state manipulation methods accessible via component bindings if needed
   export function triggerState(state: MascotState, durationMs?: number) {
     stateMachine?.setState(state, durationMs);
+    wake();
   }
 </script>
 

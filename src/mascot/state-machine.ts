@@ -17,6 +17,7 @@ export class MascotStateMachine {
   private isBlinking: boolean = false;
   private blinkTimerMs: number = 0;
   private stateTimerMs: number = 0;
+  private stateEndsAtMs = 0;
   private isDoubleBlinkQueued: boolean = false;
   private onStateChangeCallback?: (state: MascotState) => void;
 
@@ -49,6 +50,23 @@ export class MascotStateMachine {
     return this.state;
   }
 
+  /** 0 means active motion, null means fully asleep; otherwise wake at a deadline. */
+  public nextWakeDelayMs(now = Date.now()): number | null {
+    if (!this.config.enabled) return null;
+    const moving = this.isBlinking || (this.stateTimerMs > 0 && this.config.animationIntensity > 0) ||
+      this.state.gaze.x !== this.state.targetGaze.x || this.state.gaze.y !== this.state.targetGaze.y ||
+      this.state.squashY !== 1 || this.state.squashX !== 1 || this.state.breathingOffset !== 0 ||
+      this.state.sleepParticles.length > 0 || this.state.celebrateHop !== 0 || this.state.warningAlertProgress !== 0;
+    const ambient = this.config.animationIntensity > 0 &&
+      (!this.config.pauseInactiveAnimation || now - this.lastActivityMs <= 5000);
+    if (moving || ambient) return 0;
+    const deadlines: number[] = [];
+    if (this.stateTimerMs > 0) deadlines.push(this.stateEndsAtMs);
+    if (this.config.animationIntensity > 0 && !["sleepy", "dizzy"].includes(this.state.currentState)) deadlines.push(this.nextBlinkScheduledMs);
+    if (this.state.currentState === "idle") deadlines.push(this.lastActivityMs + INACTIVITY_TIMEOUT_MS + 1);
+    return deadlines.length ? Math.max(1, Math.min(...deadlines) - now) : null;
+  }
+
   public getCurrentState(): MascotState {
     return this.state.currentState;
   }
@@ -72,6 +90,7 @@ export class MascotStateMachine {
       this.state.previousState = this.state.currentState;
       this.state.currentState = nextState;
       this.stateTimerMs = customDurationMs ?? 0;
+      this.stateEndsAtMs = this.stateTimerMs > 0 ? Date.now() + this.stateTimerMs : 0;
       this.onStateChangeCallback?.(nextState);
 
       // Adjust head tilt target based on state
@@ -178,6 +197,16 @@ export class MascotStateMachine {
   public update(dtMs: number): boolean {
     const now = Date.now();
     let isDirty = false;
+    const motionEnabled = this.config.animationIntensity > 0;
+    if (!motionEnabled) {
+      isDirty = this.isBlinking || this.state.blinkProgress !== 0 || this.state.squashY !== 1 ||
+        this.state.gaze.x !== this.state.targetGaze.x || this.state.gaze.y !== this.state.targetGaze.y;
+      this.isBlinking = false;
+      this.state.blinkProgress = 0;
+      this.state.gaze = { ...this.state.targetGaze };
+      this.state.squashX = this.state.squashY = 1;
+      this.state.squashVelocityY = 0;
+    }
 
     // 1. Inactivity detection: drift to sleepy after 45s of quiet
     if (
@@ -190,7 +219,7 @@ export class MascotStateMachine {
 
     // 2. Handle timed states (happy, dizzy, celebrate, warning)
     if (this.stateTimerMs > 0) {
-      this.stateTimerMs -= dtMs;
+      this.stateTimerMs = Math.max(0, this.stateEndsAtMs - now);
       isDirty = true;
       if (this.stateTimerMs <= 0) {
         if (this.state.currentState === "dizzy") {
@@ -203,7 +232,7 @@ export class MascotStateMachine {
     }
 
     // 3. Blink scheduling & progression
-    if (!this.isBlinking && now >= this.nextBlinkScheduledMs && this.state.currentState !== "sleepy" && this.state.currentState !== "dizzy") {
+    if (this.config.animationIntensity > 0 && !this.isBlinking && now >= this.nextBlinkScheduledMs && this.state.currentState !== "sleepy" && this.state.currentState !== "dizzy") {
       this.isBlinking = true;
       this.blinkTimerMs = BLINK_DURATION_MS;
       // 18% chance of double blink
@@ -250,9 +279,12 @@ export class MascotStateMachine {
     const springK = 0.022; // Spring constant
     const damping = 0.82; // Damping ratio
     const displacementY = this.state.squashY - 1.0;
-    const forceY = -springK * displacementY * 100;
-    this.state.squashVelocityY = (this.state.squashVelocityY + forceY * (dtMs / 16.6)) * damping;
-    this.state.squashY += this.state.squashVelocityY;
+    for (let remaining = dtMs; remaining > 0; remaining -= 16.6) {
+      const step = Math.min(16.6, remaining) / 16.6;
+      const forceY = -springK * (this.state.squashY - 1.0) * 100;
+      this.state.squashVelocityY = (this.state.squashVelocityY + forceY * step) * damping ** step;
+      this.state.squashY += this.state.squashVelocityY * step;
+    }
     // Volume conservation: squashX is inversely proportional to squashY
     this.state.squashX = 1.0 + (1.0 - this.state.squashY) * 0.75;
 
@@ -269,8 +301,7 @@ export class MascotStateMachine {
     const isBreathingPaused =
       this.config.animationIntensity <= 0 ||
       (this.config.pauseInactiveAnimation === true &&
-        now - this.lastActivityMs > 5000 &&
-        this.state.currentState === "idle");
+        now - this.lastActivityMs > 5000);
 
     if (isBreathingPaused) {
       if (Math.abs(this.state.breathingOffset) > 0.02) {
@@ -297,13 +328,13 @@ export class MascotStateMachine {
     }
 
     // 7. Dizzy rotation
-    if (this.state.currentState === "dizzy") {
+    if (motionEnabled && this.state.currentState === "dizzy") {
       this.state.dizzyAngleRad = (this.state.dizzyAngleRad + (dtMs * 0.012)) % (Math.PI * 2);
       isDirty = true;
     }
 
     // 8. Sleep particle simulation ('z' bubbles)
-    if (this.state.currentState === "sleepy") {
+    if (this.state.currentState === "sleepy" && !isBreathingPaused) {
       // Spawn new z every ~1.8s
       if (Math.random() < 0.025 && this.state.sleepParticles.length < 3) {
         this.state.sleepParticles.push({
@@ -334,7 +365,7 @@ export class MascotStateMachine {
     }
 
     // 9. Celebrate hop physics
-    if (this.state.currentState === "celebrate") {
+    if (motionEnabled && this.state.currentState === "celebrate") {
       const hopCycle = (now % 800) / 800;
       this.state.celebrateHop = -Math.sin(hopCycle * Math.PI) * 4.5;
       isDirty = true;
@@ -344,7 +375,7 @@ export class MascotStateMachine {
     }
 
     // 10. Warning alert pulse
-    if (this.state.currentState === "warning") {
+    if (motionEnabled && this.state.currentState === "warning") {
       const alertPhase = (now % 900) / 900;
       this.state.warningAlertProgress = Math.sin(alertPhase * Math.PI * 2);
       isDirty = true;
