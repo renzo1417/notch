@@ -7,3 +7,5 @@ pub mod media;
 pub mod power;
 pub mod startup;
 pub mod settings;
+
+pub mod converter;

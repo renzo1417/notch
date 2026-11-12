@@ -9,3 +9,5 @@ pub mod ping;
 pub mod shell;
 pub mod settings;
 
+
+pub mod converter;

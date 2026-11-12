@@ -29,6 +29,7 @@ impl Default for ShellConfig {
 
 /// Central backend state for Project Notch.
 pub struct AppState {
+    pub converter_manager: Arc<crate::integrations::converter::ConverterManager>,
     pub is_ready: Mutex<bool>,
     pub shell_config: Mutex<ShellConfig>,
     pub media_manager: Arc<MediaManager>,
@@ -45,6 +46,7 @@ impl Default for AppState {
     fn default() -> Self {
         Self {
             is_ready: Mutex::new(true),
+            converter_manager: Arc::new(crate::integrations::converter::ConverterManager::new()),
             shell_config: Mutex::new(ShellConfig::default()),
             media_manager: Arc::new(MediaManager::new()),
             foreground_manager: Arc::new(ForegroundManager::new()),

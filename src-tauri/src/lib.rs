@@ -14,6 +14,13 @@ pub fn run() {
         .plugin(tauri_plugin_opener::init())
         .invoke_handler(tauri::generate_handler![
             commands::ping::ping,
+            commands::converter::get_converter_status,
+            commands::converter::inspect_conversion_files,
+            commands::converter::start_conversion,
+            commands::converter::cancel_conversion,
+            commands::converter::get_conversion_state,
+            commands::converter::open_conversion_result,
+            commands::converter::pick_conversion_path,
             commands::shell::set_notch_state,
             commands::shell::get_shell_config,
             commands::shell::set_always_on_top,
@@ -123,6 +130,11 @@ pub fn run() {
             }
             _ => {}
         })
-        .run(tauri::generate_context!())
-        .expect("error while running Project Notch desktop application");
+        .build(tauri::generate_context!())
+        .expect("error while building Project Notch desktop application")
+        .run(|app, event| {
+            if matches!(event, tauri::RunEvent::ExitRequested { .. }) {
+                app.state::<AppState>().converter_manager.shutdown();
+            }
+        });
 }
